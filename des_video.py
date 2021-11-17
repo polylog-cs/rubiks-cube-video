@@ -7,8 +7,10 @@ import random
 
 from solarized import *
 # Temne pozadi
+
 config.background_color = BASE02
 
+keyColor = GRAY
 textColor = GRAY
 encodeColor = RED
 decodeColor = BLUE
@@ -17,36 +19,166 @@ class DesIntro(Scene):
 	def construct(self):
 		# TODO: na začátku napsat "DES" a "Data Encryption Standard"
 
-		plain = Tex(r"polylog is great", color = textColor)
-		cipher= Tex("101...01", color = textColor)
-		encryptArrow = Arrow(start = LEFT, end = RIGHT, color = encodeColor)
-		encryptKey = ImageMobject("img/key.png")
-		encryptKey.width = encryptArrow.width*0.7
-		encryptArrowKey = Group(encryptArrow, encryptKey).arrange(UP)
-		encryptKey.shift(0.2*UP)
 
-		plain.move_to(encryptArrow.center())
-		plain.shift(3*LEFT)
-		cipher.move_to(encryptArrow.center())
-		cipher.shift(2*RIGHT)
+		#plain text
 
-		'''
-		decryptArrow = Arrow(start = RIGHT, end = LEFT, color = decodeColor)
-		decryptKey = ImageMobject("img/key.png")
-		decryptKey.width = decryptArrow.width*0.7
-		decryptArrowKey = Group(decryptArrow, decryptKey).arrange(UP)
-		decryptArrowKey.shift(2*DOWN)
-		decryptKey.shift(0.2*UP)
-		'''
+		plainText = Tex(r"funny text", color = textColor)
+		plainText.shift(3*LEFT)
+		self.play(Write(plainText))
 
+
+		padding = 0.5
+		plainBorder = Rectangle(width = plainText.get_right()[0] - plainText.get_left()[0] + padding, 
+			height = plainText.get_top()[1] - plainText.get_bottom()[1] + padding)
+		plainBorder.move_to(plainText.get_center())
+
+		plainGroup = Group(plainText, plainBorder)
+
+		self.play(Create(plainBorder))
+
+		#encrypt arrow
+
+		arrowlen = 3
+		startArrow = plainBorder.get_right() + padding * RIGHT
+		endArrow = startArrow + arrowlen * RIGHT
+		enArrow = Arrow(start = startArrow, end = endArrow, color = encodeColor)
+
+		enKey, enKeyLine, enKeyCirc = constructKey(shift = enArrow.get_center() + UP, width = enArrow.get_width())
+
+		#enKeyGroup = Group(enArrow, enKey, enKeyLine, enKeyCirc)
+
+		self.play(Create(enArrow), 
+			Create(enKey), 
+			Create(enKeyLine), 
+			Create(enKeyCirc))
+
+
+
+		# cipher text
+
+		cipherText = Tex("101011101...01", color = textColor)
+		cipherText.next_to(enArrow, RIGHT)
+		cipherText.shift(padding * RIGHT)
+
+		self.play(Create(cipherText))
+
+		cipherBorder = Rectangle(width = cipherText.get_right()[0] - cipherText.get_left()[0] + padding, 
+			height = cipherText.get_top()[1] - cipherText.get_bottom()[1] + padding)
+		cipherBorder.move_to(cipherText.get_center())
+
+		self.play(Create(cipherBorder))
+
+
+		# animate key
+
+		keyInfoWidth = 3.0
+		keyInfoHeight = 2.0
+		rec = [np.array([-keyInfoWidth/2, keyInfoHeight/2, 0]), 
+				np.array([-keyInfoWidth/2, -keyInfoHeight/2, 0]), 
+				np.array([keyInfoWidth/2, -keyInfoHeight/2, 0]), 
+				np.array([keyInfoWidth/2, keyInfoHeight/2, 0])]
+		rec = rec[1:] + rec[:1]
+		rec = rec[1:] + rec[:1]
+		#rec = rec[1:] + rec[:1]
+
+		enKeyInfo = Polygon(*rec)
+		enKeyInfo.move_to(enArrow.get_center())
+		enKeyInfo.next_to(enArrow, UP)
+		enKeyInfo.shift(padding * UP)
+
+		self.play(Uncreate(enKeyLine),
+			Uncreate(enKeyCirc))
+		self.play(Transform(enKey, enKeyInfo), run_time = 2)
+
+		ourKeyString = "10111...01"
+		txt = Tex(ourKeyString, color = textColor)
+		brace = Brace(txt, UP)
+		title = Tex("56 bits", color = textColor)
 		
-		self.play(Write(plain), Write(cipher), FadeIn(encryptArrowKey))
+		recInside = Group(txt, brace, title).arrange(UP)
+		recInside.move_to(enKeyInfo.get_center())
+
+		self.play(Write(txt), Create(brace), Write(title))
+
 		self.wait()
-		# self.play(FadeIn(decryptArrowKey))
+
+		self.play(Uncreate(txt),
+			Uncreate(brace),
+			Uncreate(title))
+
+		enKeyNew, enKeyLine, enKeyCirc = constructKey(shift = enArrow.get_center() + UP, width = enArrow.get_width())		
+
+		self.play(Transform(enKey, enKeyNew))
+		self.play(Create(enKeyLine),
+			Create(enKeyCirc))
+
+		self.wait()
+
+		self.play(FadeOut(enArrow),
+		FadeOut(enKey),
+		FadeOut(enKeyLine),
+		FadeOut(enKeyCirc),
+		FadeOut(plainGroup))
+
+		# decrypt arrow 
+		decArrow = Arrow(start = endArrow, end = startArrow, color = decodeColor)
+
+		decKey, decKeyLine, decKeyCirc = constructKey(shift = decArrow.get_center() + UP, width = decArrow.get_width())		
+
+		self.play(Create(decArrow), 
+			Create(decKey), 
+			Create(decKeyLine), 
+			Create(decKeyCirc))
+
+
+		# decrypted message
+
+		self.play(Write(plainText), Create(plainBorder))
+
+		# explode key
+
+		ourKey = Tex(ourKeyString, color = textColor)
+		ourKey.move_to(decKey.get_center())
+
+		keyBorder = Rectangle(width = ourKey.get_right()[0] - ourKey.get_left()[0] + padding, 
+			height = ourKey.get_top()[1] - ourKey.get_bottom()[1] + padding, 
+			color = keyColor)
+		keyBorder.move_to(ourKey.get_center())
+
+		self.play(FadeOut(decKeyLine),
+			FadeOut(decKeyCirc))
+		self.play(Transform(decKey, keyBorder))
+		self.play(Write(ourKey))
+
+
+		# try different key
+
+		randKeyString = "10101...11"
+		randKey = Tex(randKeyString, color = textColor).move_to(ourKey.get_center())
+		randPlainText = Tex("dkDm2,Lkp", color = textColor).move_to(plainText.get_center())
+
+		randKeyString2 = "11001...10"
+		randKey2 = Tex(randKeyString2, color = textColor).move_to(ourKey.get_center())
+		randPlainText2 = Tex("Dy.dOnj:kp", color = textColor).move_to(plainText.get_center())
+
+
+		self.play(FadeOut(ourKey), FadeOut(plainText))
+		self.play(FadeIn(randKey), FadeIn(randPlainText))
+
+		self.play(FadeOut(randKey), FadeOut(randPlainText))
+		self.play(FadeIn(randKey2), FadeIn(randPlainText2))
+
+		self.play(FadeOut(randKey2), FadeOut(randPlainText2))
+		self.play(FadeIn(ourKey), FadeIn(plainText))
 
 
 
-def constructKeyPolygon(granularity = 100, scale = 1.0/200, shift = np.array([0, 0, 0])):
+		self.wait(3)
+		
+
+def constructKey(shift = np.array([0, 0, 0]), granularity = 100, width = 1):
+		
+		#right part of the key
 		key = [
 		np.array([262.968, 373.851, 0]),
 		np.array([285.022, 362.026, 0]),
@@ -73,6 +205,8 @@ def constructKeyPolygon(granularity = 100, scale = 1.0/200, shift = np.array([0,
 		offset = key[0].copy()
 		mid = np.array([164.406, 421.883, 0])
 		
+		# adding the circly left part
+
 		midx = mid[0]
 		midy = mid[1]
 		fstx = key[len(key)-1][0]
@@ -84,9 +218,6 @@ def constructKeyPolygon(granularity = 100, scale = 1.0/200, shift = np.array([0,
 		lastangle = math.atan((lasty - midy) / (lastx - midx))
 		piangle = 3.141592654
 
-		print(fstangle)
-		print(lastangle)
-
 		r = math.sqrt((midx-fstx)*(midx-fstx) + (midy-fsty)*(midy-fsty))
 		
 		for i in range(granularity):
@@ -97,15 +228,39 @@ def constructKeyPolygon(granularity = 100, scale = 1.0/200, shift = np.array([0,
 			angle = lastangle * i / granularity - piangle * (granularity - i) / granularity 
 			vec = np.array([math.cos(angle), math.sin(angle), 0])
 			key.append(mid + r * vec)	
+		#key.reverse() 
 
-		for pnt in key:
+
+		# compute offsets
+
+		left = min([pnt[0] for pnt in key])
+		right = max([pnt[0] for pnt in key])
+		top = max([pnt[1] for pnt in key])
+		bottom = min([pnt[1] for pnt in key])
+		
+		keyWidth = right - left
+		offset = np.array([(left + right)/2, (top + bottom)/2, 0])
+		
+		# line in the key
+
+		keyline = [
+		np.array([539.002, 427.256, 0]),
+		np.array([253.473, 425.757, 0]),
+		np.array([286.295, 412.773, 0]),
+		np.array([525.775, 414.571, 0])]
+
+
+		# middle circle
+		midcirc = np.array([109.552, 425.451, 0])
+		radcirc = 25.2117 * width / keyWidth
+
+
+		for pnt in key + keyline + [midcirc]:
 			pnt -= offset
-			pnt *= scale
+			pnt *= width / keyWidth
 			pnt += shift 
-
-		key.reverse()
-
-		return key
+		
+		return Polygon(*key, fill_opacity = 1, color = keyColor), Polygon(*keyline, color = "red"), Circle(radius = radcirc, color = "red").move_to(midcirc)
 
 
 class Key(Scene):
@@ -114,8 +269,7 @@ class Key(Scene):
 
 
 		keyCenter = np.array([0, 0, 0])
-		key = constructKeyPolygon(shift = keyCenter)
-		T1 = Polygon(*key)
+		T1 = constructKey(shift = keyCenter)
 
 		recWidth = 3.0
 		recHeight = 2.0
@@ -143,7 +297,7 @@ class Key(Scene):
 		title.shift(1 * UP)
 
 		recInside = Group(txt, brace, title)
-		recInside.shift(3 * RIGHT)
+		recInside.shift(0.4 * DOWN)
 
 		self.play(Write(txt), Create(brace), Write(title))
 

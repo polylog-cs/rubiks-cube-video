@@ -33,7 +33,8 @@ class GraphScene(Scene):
 			if u != v:
 				G[u].append(v)
 				edges.append((u,v))
-		
+		for i in range(N):
+			if len(G[i]
 
 
 		#print(G)
