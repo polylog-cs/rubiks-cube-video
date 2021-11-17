@@ -11,51 +11,63 @@ import util
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
-def bfs_circle_animations(
-    center,
-    iterations,
-    label_angle=0.25 * PI,
-    group=None,
-    base_radius=0.9,
-    radius_step=0.4,
-):
-    if group is None:
-        group = Group()
+class BFSCircleAnimations:
+    def __init__(
+        self,
+        center,
+        iterations,
+        label_angle=0.25 * PI,
+        base_radius=0.9,
+        radius_step=0.4,
+    ):
+        self.center = center
+        self.iterations = iterations
+        self.base_radius = base_radius
+        self.radius_step = radius_step
 
-    circle = Circle(color=RED, radius=base_radius).move_to(center)
-
-    tex = MathTex(r"1", color=RED)
-
-    tex.add_updater(
-        lambda x: x.move_to(
-            Point()
-            .move_to(circle.get_right() + RIGHT * 0.4)
-            .rotate(angle=label_angle, about_point=circle.get_center()),
-        )
-    )
-    group.add(circle, tex)
-
-    yield (GrowFromCenter(circle), FadeIn(tex))
-
-    for i in range(1, iterations):
-        c2 = circle.copy()
-        group.add(c2)
-
-        # This is needed so that the label follows properly during the animation
-        # (we can't be moving `c2`, it has to be `circle`)
-        circle, c2 = c2, circle
-
-        tex2 = MathTex(str(i + 1), color=RED)
-
-        c3 = Circle(color=RED, radius=base_radius + i * radius_step).move_to(center)
-
-        yield (
-            circle.animate.become(c3),
-            c2.animate.set_color(GRAY),
-            tex.animate.become(tex2),
+        self.circle = Circle(color=RED, radius=base_radius).move_to(center)
+        self.label = MathTex(r"1", color=RED)
+        self.label.add_updater(
+            lambda x: x.move_to(
+                Point()
+                .move_to(self.circle.get_right() + RIGHT * 0.4)
+                .rotate(angle=label_angle, about_point=self.circle.get_center()),
+            )
         )
 
-    tex.clear_updaters()
+        self.step = -1
+        self.circles = [self.circle]
+
+    def __next__(self):
+        self.step += 1
+
+        if self.step == 0:
+            return (GrowFromCenter(self.circle), FadeIn(self.label))
+        elif self.step < self.iterations:
+            c2 = self.circle.copy()
+            self.circles.append(c2)
+
+            # This is needed so that the label follows properly during the animation
+            # (we can't be moving `c2`, it has to be `circle`)
+            self.circle, c2 = c2, self.circle
+
+            label2 = MathTex(str(self.step + 1), color=RED)
+
+            c3 = Circle(
+                color=RED, radius=self.base_radius + self.step * self.radius_step
+            ).move_to(self.center)
+
+            return (
+                self.circle.animate.become(c3),
+                c2.animate.set_color(GRAY),
+                self.label.animate.become(label2),
+            )
+        else:
+            # tex.clear_updaters()
+            raise StopIteration
+
+    def __iter__(self):
+        return self
 
 
 def generate_path_animations(center, angle, base_radius, radius_step, n_steps):
@@ -99,8 +111,6 @@ class BFSOneSide(ThreeDScene):
         “slupky” kolem scrambled, vnější slupka se vzdáleností 20 už obsahuje
         složenou kostku.
 
-        Ztratí se slupky až na prvních 10, ty tu kostku neobsahují.
-
         Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
 
         Ukázat slupky z obou stran, musí se protínat
@@ -108,7 +118,88 @@ class BFSOneSide(ThreeDScene):
         TODO: nějak navázat na následující animaci, ideálně ale rozdělit aby se
         to snáz renderovalo
         """
-        pass
+        self.camera.set_focal_distance(20000.0)
+
+        base_radius = 0.9
+        radius_step = 0.3
+        n_steps = 20
+        n_steps_small = 10
+        overlap = 2
+
+        cube_distance = base_radius + radius_step * (n_steps - overlap / 2 - 1)
+
+        cube_from = RubiksCube(cubie_size=0.3, rotate_nicely=True).shift(
+            LEFT * cube_distance / 2
+        )
+        cube_to = RubiksCube(cubie_size=0.3, rotate_nicely=True).shift(
+            RIGHT * cube_distance / 2
+        )
+        util.scramble_to_feliks(cube_from)
+
+        self.add(cube_from, cube_to)
+        self.wait()
+
+        circle_anims_from = BFSCircleAnimations(
+            cube_from.get_center(),
+            n_steps,
+            label_angle=15 * DEGREES,
+            base_radius=base_radius,
+            radius_step=radius_step,
+        )
+
+        if True:
+            for i, anims in enumerate(circle_anims_from):
+                self.play(*anims, run_time=2 / (i + 2))
+
+            self.wait()
+
+            # Ztratí se slupky až na prvních 10, ty tu kostku neobsahují.
+            self.play(
+                *[
+                    FadeOut(circle)
+                    for circle in circle_anims_from.circles[n_steps_small:]
+                ],
+                FadeOut(circle_anims_from.label),
+            )
+            self.wait()
+
+            # Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
+            self.play(
+                *[
+                    FadeOut(circle)
+                    for circle in circle_anims_from.circles[:n_steps_small]
+                ]
+            )
+
+        circle_anims_to = BFSCircleAnimations(
+            cube_to.get_center(),
+            n_steps_small,
+            label_angle=(180 - 45) * DEGREES,
+            base_radius=base_radius,
+            radius_step=radius_step,
+        )
+
+        for i, anims in enumerate(circle_anims_to):
+            self.play(*anims, run_time=0.1)
+
+        self.wait()
+
+        self.play(*[FadeOut(circle) for circle in circle_anims_to.circles[:-1]])
+        self.wait()
+
+        circle_anims_from.circles[n_steps_small - 1].set_color(RED)
+
+        circle_anims_from.label.become(MathTex(str(n_steps_small), color=RED))
+        circle_anims_from.circle.become(circle_anims_from.circles[n_steps_small - 1])
+
+        self.play(
+            FadeIn(circle_anims_from.circles[n_steps_small - 1]),
+            FadeIn(circle_anims_from.label),
+        )
+        self.wait()
+
+        self.play(*[FadeOut(mob) for mob in self.mobjects])
+        self.wait()
 
 
 class CubeMITM(ThreeDScene):
@@ -126,7 +217,13 @@ class CubeMITM(ThreeDScene):
         two partial paths to get the best solution.
         """
         self.camera.set_focal_distance(20000.0)
-        cube_distance = 8
+
+        base_radius = 0.9
+        radius_step = 0.3
+        n_steps = 9
+
+        cube_distance = 2 * (base_radius + radius_step * (n_steps - 1))
+
         cube_from = RubiksCube(cubie_size=0.3, rotate_nicely=True).shift(
             LEFT * cube_distance / 2
         )
@@ -138,43 +235,25 @@ class CubeMITM(ThreeDScene):
         self.add(cube_from, cube_to)
         self.wait()
 
-        base_radius = 0.9
-        radius_step = 0.3
-        # TODO: co s tim, ze cesta ma 18 kroku ale polomer koule ma byt 10?
-        n_steps = 9
+        circle_anims_from = BFSCircleAnimations(
+            cube_from.get_center(),
+            n_steps,
+            label_angle=45 * DEGREES,
+            base_radius=base_radius,
+            radius_step=radius_step,
+        )
 
-        group_from = Group(cube_from)
-        group_to = Group(cube_to)
+        circle_anims_to = BFSCircleAnimations(
+            cube_to.get_center(),
+            n_steps,
+            label_angle=(180 - 45) * DEGREES,
+            base_radius=base_radius,
+            radius_step=radius_step,
+        )
 
-        for anims_from, anims_to in zip(
-            bfs_circle_animations(
-                cube_from.get_center(),
-                n_steps,
-                label_angle=0.25 * PI,
-                group=group_from,
-                base_radius=base_radius,
-                radius_step=radius_step,
-            ),
-            bfs_circle_animations(
-                cube_to.get_center(),
-                n_steps,
-                label_angle=0.75 * PI,
-                group=group_to,
-                base_radius=base_radius,
-                radius_step=radius_step,
-            ),
-        ):
+        for anims_from, anims_to in zip(circle_anims_from, circle_anims_to):
             self.play(*anims_from, run_time=1 / 3)
             self.play(*anims_to, run_time=1 / 3)
-
-        self.wait()
-
-        ############ Move the cubes together ############
-
-        coef = 0.5 * cube_distance - (base_radius + radius_step * (n_steps - 1))
-        self.play(
-            group_from.animate.shift(RIGHT * coef), group_to.animate.shift(LEFT * coef)
-        )
 
         self.wait()
 
@@ -188,12 +267,13 @@ class CubeMITM(ThreeDScene):
         )
 
         for anims_from, anims_to in zip(path_anims_from, path_anims_to):
-            self.play(*(anims_from + anims_to), run_time=0.5)
+            self.play(*(anims_from + anims_to), run_time=1 / 3)
 
         self.wait()
 
         ############ Walk it ############
-        self.bring_to_front(cube_from)
+        # self.bring_to_front(cube_from)
+        self.bring_to_back(*(circle_anims_from.circles + circle_anims_to.circles))
 
         points_both = points_from[1:-1] + points_to[::-1]
 
@@ -205,7 +285,7 @@ class CubeMITM(ThreeDScene):
         for i, move in zip(range(len(points_both)), util.FELIKS_UNSCRAMBLE_MOVES):
             self.play(
                 CubeMove(cube_from, move, points_both[i].get_center() + DOWN),
-                run_time=0.5,
+                run_time=1 / 3,
             )
             # if i == 4:
             #     break
