@@ -1,19 +1,22 @@
 from manim import *
 from manim.utils import tex
-#from des import DesKey #pip install des
 import numpy as np
 import math
 import textwrap
 import random
 
-textColor = "white"
-encodeColor = "red"
-decodeColor = "blue"
+from solarized import *
+# Temne pozadi
+config.background_color = BASE02
 
-
+textColor = GRAY
+encodeColor = RED
+decodeColor = BLUE
 
 class DesIntro(Scene):
 	def construct(self):
+		# TODO: na začátku napsat "DES" a "Data Encryption Standard"
+
 		plain = Tex(r"polylog is great", color = textColor)
 		cipher= Tex("101...01", color = textColor)
 		encryptArrow = Arrow(start = LEFT, end = RIGHT, color = encodeColor)
@@ -39,7 +42,7 @@ class DesIntro(Scene):
 		
 		self.play(Write(plain), Write(cipher), FadeIn(encryptArrowKey))
 		self.wait()
-		self.play(FadeIn(decryptArrowKey))
+		# self.play(FadeIn(decryptArrowKey))
 
 
 
@@ -145,3 +148,51 @@ class Key(Scene):
 		self.play(Write(txt), Create(brace), Write(title))
 
 		self.wait(10)
+
+class DesBruteForce(Scene):
+	def construct(self):
+		"""
+		TODO: Animace, kde je vstupní text (něco vtipného), pak šipky nad
+		kterými jsou klíče a jde to do cipher textů. Klíč je buď klipart nebo
+		občas string bitů. Napravo je cipher text a checkujeme (posouváme ho?)
+		zda matchuje naše ciphertexty
+		"""
+		pass
+
+class TripleDes(Scene):
+	def construct(self):
+		"""
+		TODO: animace k tomuhle:
+		To fix this issue, people came up with a new cipher known as Triple DES,
+		which is just the old DES but applied three times in a row with three
+		different keys of combined length of 3*56 = 168 bits. But you may ask,
+		why Triple DES and not just Double DES where you would apply the
+		encryption function two times, each time with a different key. The
+		combined length of the two keys would be 2*56 = 112 which is definitely
+		enough so that bruteforce is not a possibility, because 2^56 is 10^30,
+		which is just way too much. 
+		"""
+		pass
+
+class DesMITM(Scene):
+	def construct(self):
+		"""
+		TODO: Meet in the middle na double DES. Podobná animace jako pro brute force,
+		ale “osově symetrická” - pozor, abychom konzistentně používali šifrovací
+		a dešifrovací styl šipky
+		"""
+		pass
+
+class GeneralMITM(Scene):
+	def construct(self):
+		"""
+		TODO: Srovnání MITM na kostce a na DES. Co je společného. Nalevo kostka,
+		napravo nějak vizualizovaný DES. Pak v "tabulce" ukázat čísla
+		srovnávající runtime bruteforcu vs MITM.
+
+		Pak ukázat i použité množství paměti, aby byl vidět tradeoff.
+
+		Nakonec někde ukázat zobecnění, že potřebujeme sice jen sqrt(n) času,
+		ale zato sqrt(n) paměti místo O(1).
+		"""
+		pass
