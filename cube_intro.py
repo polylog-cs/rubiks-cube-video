@@ -1,4 +1,5 @@
 from manim import *
+import manim
 
 # Use our fork of manim_rubikscube!
 from manim_rubikscube import *
@@ -13,10 +14,43 @@ cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 class ChannelIntro(ThreeDScene):
     def construct(self):
-        """
-        TODO: logo kanalu a nase jmena
-        """
-        pass
+        text_color = GRAY
+
+        # TODO: napsat kdo co delal?
+        volhejn = Tex(r"Václav Volhejn", color=text_color)
+        rozhon = Tex(r"Václav Rozhoň", color=text_color)
+        hlasek = Tex(r"Filip Hlásek", color=text_color)
+
+        # TODO: tady je nerovnomerne odradkovani :(
+        names = Group(rozhon, volhejn, hlasek).arrange(DOWN)
+        names.shift(2 * DOWN + 4 * RIGHT)
+
+        volhejn.align_to(names, RIGHT)
+        rozhon.align_to(names, RIGHT)
+        hlasek.align_to(names, RIGHT)
+
+        # TODO: logo kanalu?
+        channel_name = Tex(r"polylog", color=text_color)
+        channel_name.scale(4).shift(1 * UP)
+
+        run_time = Write(channel_name).run_time
+        self.play(
+            Write(volhejn, run_time=run_time),
+            Write(rozhon, run_time=run_time),
+            Write(hlasek, run_time=run_time),
+            Write(channel_name, run_time=run_time),
+        )
+
+        self.wait(1)
+
+        self.play(
+            Unwrite(volhejn),
+            Unwrite(rozhon),
+            Unwrite(hlasek),
+            Unwrite(channel_name),
+            run_time=1,
+        )
+        self.wait(1)
 
 
 class MoveDefinition(ThreeDScene):
@@ -114,9 +148,54 @@ class CubeGraph(ThreeDScene):
         the breadth first search algorithm. Simply speaking, this algorithm
         explores all possible configurations from the scrambled one in the order
         of their distance to that configuration. We are searching until we
-        encounter the solved configuration.  
+        encounter the solved configuration.
         """
-        pass
+        self.camera.set_focal_distance(20000.0)
+
+        # TODO: najit zajimavejsi graf, ve kterem existuji dve cesty (dve reseni)
+        # ktere se netrivialne lisi a jedna je rychlejsi.
+        vertices = [
+            1,  # solved
+            2,  # R
+            3,  # L2
+            4,  # L2 R
+            5,  # R U'
+        ]
+        edges = [(1, 2), (1, 3), (2, 4), (3, 4), (5, 2)]
+        g = Graph(
+            vertices,
+            edges,
+            vertex_type=RubiksCube,
+            vertex_config={
+                "cubie_size": 0.3,
+            },
+            edge_config={
+                "color": GRAY,
+                "shade_in_3d": True,  # Needed to keep the edges behind the cube
+            },
+            layout="kamada_kawai",
+        )
+        g[2].do_move("R")
+        g[3].do_move("L2")
+        g[4].do_move("L2").do_move("R")
+        g[5].do_move("R").do_move("U'")
+
+        # self.play(Create(g))
+        self.add(g)
+
+        self.wait()
+
+        self.play(
+            g[1].animate.move_to([1, 1, 0]),
+            g[2].animate.move_to([-1, 1, 0]),
+            g[3].animate.move_to([1, -1, 0]),
+            g[4].animate.move_to([-1, -1, 0]),
+        )
+        self.wait()
+
+        # TODO: zvyraznit nejkratsi cestu
+        
+        # TODO: vizualizovat BFS (podobne jako v prvnim videu)
 
 
 class NumberOfStates(Scene):
@@ -180,7 +259,7 @@ class FriendshipGraph(Scene):
 
         For example, you may have heard about the six degrees of separation
         phenomenon that says that you can reach anybody on earth via 6
-        intermediate friends. 
+        intermediate friends.
 
         TODO: chceme k tomuhle odstavci nějakou animaci?
         In fact, researchers have verified that, at least on Facebook, you are
