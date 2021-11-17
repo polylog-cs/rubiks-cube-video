@@ -14,7 +14,7 @@ class GraphScene(Scene):
 
 		print(random.uniform(0, 1))
 
-		N = 80
+		N = 100
 		M = 100
 		G = {}
 		vertices = []
