@@ -11,106 +11,6 @@ import util
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
-class BasicExample(ThreeDScene):
-    def construct(self):
-        cube = RubiksCube()
-
-        state = "BBFBUBUDFDDUURDDURLLLDFRBFRLLFFDLUFBDUBBLFFUDLRRRBLURR"
-        cube.set_state(state)
-
-        axes = ThreeDAxes()
-
-        self.add(Text("x").shift(np.array([4, 0, 0])))
-        self.add(Text("y").shift(np.array([0, 4, 0])))
-        self.add(Text("z").shift(np.array([0, 0, 4])))
-
-        cube.rotate(15 * DEGREES, axis=np.array([1, 0, 0]))
-        cube.rotate(15 * DEGREES, axis=np.array([0, 1, 0]))
-
-        self.play(CubeMove(cube, "L"), run_time=1)
-        self.play(CubeMove(cube, "R"), run_time=1)
-        self.play(CubeMove(cube, "U"), run_time=1)
-        self.play(CubeMove(cube, "D"), run_time=1)
-        self.play(CubeMove(cube, "F"), run_time=1)
-        self.play(CubeMove(cube, "B"), run_time=1)
-
-        self.wait(1)
-
-
-class CubeAndGraph(ThreeDScene):
-    def construct(self):
-        vertices = [1, 2, 3, 4]
-        edges = [(1, 2), (2, 3), (3, 4), (1, 3), (1, 4)]
-        g = Graph(
-            vertices,
-            edges,
-            vertex_type=RubiksCube,
-            vertex_config={
-                "cubie_size": 0.5,
-                "rotate_nicely": True,
-            },
-        )
-        self.play(Create(g))
-        self.wait()
-        self.play(
-            g[1].animate.move_to([1, 1, 0]),
-            g[2].animate.move_to([-1, 1, 0]),
-            g[3].animate.move_to([1, -1, 0]),
-            g[4].animate.move_to([-1, -1, 0]),
-        )
-        self.wait()
-
-        self.wait(1)
-
-
-class MoveDefinition(ThreeDScene):
-    def construct(self):
-        self.camera.set_focal_distance(20000.0)
-
-        moves = [pre + suf for suf in ["", "'", "2"] for pre in "RLUDFB"]
-        print(moves)
-        positions = []
-
-        for dy in range(3):
-            for dx in range(-3, 3):
-                positions.append([dx + 0.5, -dy - 2, 0])
-
-        cur_cube = RubiksCube(rotate_nicely=True, cubie_size=1).shift(UP)
-
-        print("Outer:", cur_cube.get_sheen_factor(), cur_cube.get_sheen_direction())
-
-        self.play(FadeIn(cur_cube))
-        # self.play(Rotate(cur_cube, 2 * PI, UP), run_time=3)
-        # self.play(Rotate(cur_cube, 2 * PI, UP), run_time=1)
-        # self.play(cur_cube.animate.do_move("F"))
-
-        shift_by = UP * 3
-
-        def scale_and_shift(cube: RubiksCube):
-            cube.shift(shift_by)
-            cube.scale(0.3)
-            return cube
-
-        self.play(ApplyFunction(scale_and_shift, cur_cube))
-
-        for move, position in zip(moves[:6], positions[:6]):
-            new_cube = RubiksCube(rotate_nicely=True, cubie_size=0.3)
-            new_cube.shift(shift_by)
-            self.add(new_cube)
-            cur_cube.set_opacity(0)
-
-            def do_move(cube: RubiksCube):
-                cube.set_opacity(1)
-                cube.shift(np.array(position) * 1.5)
-                return cube
-
-            self.play(ApplyFunction(do_move, cur_cube))
-            self.play(CubeMove(cur_cube, move))
-            cur_cube = new_cube
-
-        self.wait(1)
-
-
 def bfs_circle_animations(
     center,
     iterations,
@@ -192,8 +92,39 @@ def generate_path_animations(center, angle, base_radius, radius_step, n_steps):
     return points, animations
 
 
-class MeetInTheMiddle(ThreeDScene):
+class BFSOneSide(ThreeDScene):
     def construct(self):
+        """
+        TODO: animace kde je nalevo scrambled kostka, napravo složená, přidáváme
+        “slupky” kolem scrambled, vnější slupka se vzdáleností 20 už obsahuje
+        složenou kostku.
+
+        Ztratí se slupky až na prvních 10, ty tu kostku neobsahují.
+
+        Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
+
+        Ukázat slupky z obou stran, musí se protínat
+
+        TODO: nějak navázat na následující animaci, ideálně ale rozdělit aby se
+        to snáz renderovalo
+        """
+        pass
+
+
+class CubeMITM(ThreeDScene):
+    def construct(self):
+        """
+        Meet in the middle.
+        TODO: změnit, aby odpovídalo textu:
+
+        Ok, why is this useful? Well, instead of starting on one side and trying
+        to reach the other, we can actually search from both sides at once and
+        stop once we meet in the middle. By that we mean searching until the two
+        balls intersect for the first time. When that happens, there is a
+        configuration for which we know the fastest way to reach it both from
+        the scrambled cube and from the solved one. Then we simply connect these
+        two partial paths to get the best solution.
+        """
         self.camera.set_focal_distance(20000.0)
         cube_distance = 8
         cube_from = RubiksCube(cubie_size=0.3, rotate_nicely=True).shift(
@@ -282,29 +213,28 @@ class MeetInTheMiddle(ThreeDScene):
         self.wait()
 
 
-class SheenBug(ThreeDScene):
-    """Only for bug report purposes"""
-
+class MemoryIssues(ThreeDScene):
     def construct(self):
-        rect = RoundedRectangle(  # Works fine for `Rectangle`
-            height=5.0,  # Works fine if width and height are not set
-            width=6.0,  # Works fine if width and height are not set
-            shade_in_3d=True,
-            # sheen_factor=0.0, # Doesn't do anything
-            fill_opacity=1.0,
-        )
+        """
+        TODO: vymyslet animaci k tomuhle:
 
-        rect.set_fill(BLUE)
+        So in terms of time, we’re in the clear. But another issue arises if we
+        try to actually implement this idea: memory. Storing 10^10 cube
+        configurations would require about XYZ GB, a bit too much for our poor
+        laptops. This means that we need to use some additional trickery to make
+        the code work. But it can be done - if you’re curious, check out the
+        code linked in the video description. We also include a bit about the
+        state-of-the-art solving algorithms. Those algorithms also use the meet
+        in the middle idea, but they also exploit some more specific properties
+        of the cube graph, which allows them to be much faster than our simple
+        meet in the middle search.
 
-        self.add(rect)
-        self.play(
-            Rotate(
-                rect,
-                about_point=np.array([0, 0, -1]),
-                axis=np.array([0, 1, 0]),
-                angle=2 * PI,
-            ),
-            run_time=3,
-            rate_func=linear,
-        )
-        self.wait(1)
+        The trick that we have used is called the meet in the middle trick, for
+        obvious reasons. In this special instance, it is also called
+        bidirectional search. The only property of the cube graph that we
+        exploited is that the number of explored nodes grows very rapidly.
+        Graphs with this property are more common than you think, not just
+        rubik’s cube graph and friendship networks. Again, more in the video
+        description!
+        """
+        pass
