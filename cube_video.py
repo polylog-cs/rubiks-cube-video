@@ -75,15 +75,15 @@ class MoveDefinition(ThreeDScene):
             for dx in range(-3, 3):
                 positions.append([dx + 0.5, -dy - 2, 0])
 
-        cur_cube = RubiksCube(rotate_nicely=True, cubie_size=1)
+        cur_cube = RubiksCube(rotate_nicely=True, cubie_size=1).shift(UP)
 
         print("Outer:", cur_cube.get_sheen_factor(), cur_cube.get_sheen_direction())
 
         self.play(FadeIn(cur_cube))
         # self.play(Rotate(cur_cube, 2 * PI, UP), run_time=3)
-        self.play(Rotate(cur_cube, 2 * PI, UP), run_time=1)
-        self.wait(0.5)
-        return
+        # self.play(Rotate(cur_cube, 2 * PI, UP), run_time=1)
+        # self.play(cur_cube.animate.do_move("F"))
+
         shift_by = UP * 3
 
         def scale_and_shift(cube: RubiksCube):
@@ -158,6 +158,40 @@ def bfs_circle_animations(
     tex.clear_updaters()
 
 
+def generate_path_animations(center, angle, base_radius, radius_step, n_steps):
+    spread = 0.3
+
+    def get_radius(i):
+        return base_radius + i * radius_step
+
+    points = [Dot(color=RED).shift(center)]
+    animations = [[Create(points[0])]]
+
+    for i in range(n_steps):
+        if i < n_steps - 1:
+            cur_spread = np.arcsin(spread / get_radius(i))
+            cur_angle = np.random.uniform(angle - cur_spread, angle + cur_spread)
+        else:
+            # Keep the last one centered to match the other side
+            cur_angle = angle
+
+        point = (
+            Dot(color=RED)
+            .shift(RIGHT * get_radius(i))
+            .rotate_about_origin(cur_angle)
+            .shift(center)
+        )
+        points.append(point)
+        animations.append([Create(point)])
+
+    for i in range(1, n_steps + 1):
+        animations[i].append(
+            Create(Line(points[i - 1].get_center(), points[i].get_center(), color=RED))
+        )
+
+    return points, animations
+
+
 class MeetInTheMiddle(ThreeDScene):
     def construct(self):
         self.camera.set_focal_distance(20000.0)
@@ -171,12 +205,12 @@ class MeetInTheMiddle(ThreeDScene):
         util.scramble_to_feliks(cube_from)
 
         self.add(cube_from, cube_to)
-
         self.wait()
 
         base_radius = 0.9
         radius_step = 0.3
-        n_steps = 10
+        # TODO: co s tim, ze cesta ma 18 kroku ale polomer koule ma byt 10?
+        n_steps = 9
 
         group_from = Group(cube_from)
         group_to = Group(cube_to)
@@ -199,17 +233,52 @@ class MeetInTheMiddle(ThreeDScene):
                 radius_step=radius_step,
             ),
         ):
-            self.play(*anims_from, run_time=0.5)
-            self.play(*anims_to, run_time=0.5)
+            self.play(*anims_from, run_time=1 / 3)
+            self.play(*anims_to, run_time=1 / 3)
 
         self.wait()
 
-        coef = 0.5 * cube_distance - (base_radius + radius_step * (n_steps - 1))
+        ############ Move the cubes together ############
 
-        print(0.5 * cube_distance, (base_radius + radius_step * (n_steps - 1)))
+        coef = 0.5 * cube_distance - (base_radius + radius_step * (n_steps - 1))
         self.play(
             group_from.animate.shift(RIGHT * coef), group_to.animate.shift(LEFT * coef)
         )
+
+        self.wait()
+
+        ############ Generate the path ############
+
+        points_from, path_anims_from = generate_path_animations(
+            cube_from.get_center(), 0, base_radius, radius_step, n_steps
+        )
+        points_to, path_anims_to = generate_path_animations(
+            cube_to.get_center(), PI, base_radius, radius_step, n_steps
+        )
+
+        for anims_from, anims_to in zip(path_anims_from, path_anims_to):
+            self.play(*(anims_from + anims_to), run_time=0.5)
+
+        self.wait()
+
+        ############ Walk it ############
+        self.bring_to_front(cube_from)
+
+        points_both = points_from[1:-1] + points_to[::-1]
+
+        self.play(
+            cube_from.animate.move_to(points_from[0].get_center() + DOWN),
+            FadeOut(cube_to),
+        )
+
+        for i, move in zip(range(len(points_both)), util.FELIKS_UNSCRAMBLE_MOVES):
+            self.play(
+                CubeMove(cube_from, move, points_both[i].get_center() + DOWN),
+                run_time=0.5,
+            )
+            # if i == 4:
+            #     break
+
         self.wait()
 
 
