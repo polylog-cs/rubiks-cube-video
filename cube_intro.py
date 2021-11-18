@@ -67,48 +67,78 @@ class MoveDefinition(ThreeDScene):
         """
         self.camera.set_focal_distance(20000.0)
 
-        moves = [pre + suf for suf in ["", "'", "2"] for pre in "RLUDFB"]
-        print(moves)
+        faces = "UDLRFB"
+        moves = [pre + suf for suf in ["", "'", "2"] for pre in faces]
+
         positions = []
 
         for dy in range(3):
             for dx in range(-3, 3):
                 positions.append([dx + 0.5, -dy - 2, 0])
 
-        cur_cube = RubiksCube(rotate_nicely=True, cubie_size=1).shift(UP)
+        first_cube = RubiksCube(rotate_nicely=True, cubie_size=1)
 
-        print("Outer:", cur_cube.get_sheen_factor(), cur_cube.get_sheen_direction())
+        self.play(FadeIn(first_cube))
+        self.play(Rotate(first_cube, 2 * PI, UP), run_time=3)
 
-        self.play(FadeIn(cur_cube))
-        # self.play(Rotate(cur_cube, 2 * PI, UP), run_time=3)
-        # self.play(Rotate(cur_cube, 2 * PI, UP), run_time=1)
-        # self.play(cur_cube.animate.do_move("F"))
+        # shift_by = UP * 3
 
-        shift_by = UP * 3
+        self.play(first_cube.animate.scale(0.5))
 
-        def scale_and_shift(cube: RubiksCube):
-            cube.shift(shift_by)
-            cube.scale(0.3)
-            return cube
+        grid_spacing = 2
 
-        self.play(ApplyFunction(scale_and_shift, cur_cube))
+        cubes = [
+            RubiksCube(rotate_nicely=True, cubie_size=0.5) for i in range(len(faces))
+        ]
 
-        for move, position in zip(moves[:6], positions[:6]):
-            new_cube = RubiksCube(rotate_nicely=True, cubie_size=0.3)
-            new_cube.shift(shift_by)
-            self.add(new_cube)
-            cur_cube.set_opacity(0)
+        self.add(*cubes)
+        self.remove(first_cube)
 
-            def do_move(cube: RubiksCube):
-                cube.set_opacity(1)
-                cube.shift(np.array(position) * 1.5)
-                return cube
+        self.play(
+            *[
+                cube.animate.shift(RIGHT * grid_spacing * (i - 2.5))
+                for i, cube in enumerate(cubes)
+            ]
+        )
 
-            self.play(ApplyFunction(do_move, cur_cube))
-            self.play(CubeMove(cur_cube, move))
-            cur_cube = new_cube
+        self.wait()
 
-        self.wait(1)
+        # TODO: dát místo linear interpolace něco hladčího?
+        for _ in range(4):
+            self.play(
+                *[
+                    CubeMove(cube, face, rate_func=linear)
+                    for cube, face in zip(cubes, faces)
+                ],
+                run_time=0.5
+            )
+
+        self.wait()
+
+        anims = []
+
+        for y in [-1, 1]:
+            for i, face in enumerate(faces):
+                cubes.append(
+                    RubiksCube(rotate_nicely=True, cubie_size=0.5).shift(
+                        RIGHT * grid_spacing * (i - 2.5)
+                    )
+                )
+                anims.append(cubes[-1].animate.shift(UP * grid_spacing * y))
+
+        self.add(*cubes)
+
+        self.play(*anims)
+        self.wait()
+
+        anims = []
+
+        for j in [2, 0, 1]:
+            for i, face in enumerate(faces):
+                anims.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j]))
+
+        self.play(LaggedStart(*anims))
+        self.wait(2)
 
 
 class FeliksVsOptimal(ThreeDScene):
@@ -194,7 +224,7 @@ class CubeGraph(ThreeDScene):
         self.wait()
 
         # TODO: zvyraznit nejkratsi cestu
-        
+
         # TODO: vizualizovat BFS (podobne jako v prvnim videu)
 
 
