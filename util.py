@@ -40,3 +40,69 @@ FELIKS_UNSCRAMBLE_MOVES = [invert_move(move) for move in FELIKS_SCRAMBLE_MOVES[:
 def scramble_to_feliks(cube: RubiksCube):
     for move in FELIKS_SCRAMBLE_MOVES:
         cube.do_move(move)
+
+
+FELIKS_ACTUAL_SOLUTION_MOVES_RAW = [
+    "U'",
+    "R",
+    "F",
+    "R'",
+    "U'",
+    "D",
+    "L'",
+    "U2",
+    "L2",
+    "U'",
+    "L'",
+    "U",
+    "R'",
+    "U",
+    "R",
+    "R'",
+    "U",
+    "R",
+    "U",
+    "R'",
+    "U'",
+    "R",
+    "F",
+    "R",
+    "U'",
+    "R'",
+    "U'",
+    "R",
+    "U",
+    "R'",
+    "F'",
+    "R",
+    "U'",
+    "R",
+    "U",
+    "R",
+    "U",
+    "R",
+    "U'",
+    "R'",
+    "U'",
+    "R2",
+    "U",
+]
+
+
+def apply_feliks_turn(move):
+    # Apply the INVERSE of x' y'. These are rotations of the whole cube,
+    # so they essentially transform the moves performed
+    replacements = {
+        "U": "B",
+        "D": "F",
+        "L": "D",
+        "R": "U",
+        "F": "L",
+        "B": "R",
+    }
+    return replacements[move[0]] + move[1:]
+
+
+FELIKS_ACTUAL_SOLUTION_MOVES = [
+    apply_feliks_turn(move) for move in FELIKS_ACTUAL_SOLUTION_MOVES_RAW
+]

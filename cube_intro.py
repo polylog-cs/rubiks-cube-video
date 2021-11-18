@@ -1,3 +1,5 @@
+from itertools import zip_longest
+
 from manim import *
 import manim
 
@@ -150,7 +152,64 @@ class FeliksVsOptimal(ThreeDScene):
         can be solved in 18 moves, although Mr. Zemdegs’s solution was of course
         different and used 44 moves.
         """
-        pass
+        self.camera.set_focal_distance(20000.0)
+
+        cube_distance = 7
+
+        cube_actual = RubiksCube(cubie_size=0.75, rotate_nicely=False).shift(
+            LEFT * cube_distance / 2
+        )
+        cube_best = RubiksCube(cubie_size=0.75, rotate_nicely=False).shift(
+            RIGHT * cube_distance / 2
+        )
+
+        buff = 1
+        text_actual = Tex("Feliks Zemdegs", color=GRAY).scale(1.5).next_to(
+            cube_actual, direction=UP, buff=buff
+        )
+        counter_actual = Integer(0, color=GRAY).scale(1.5).next_to(
+            cube_actual, direction=DOWN, buff=buff
+        )
+        text_best = Tex("Omniscient being", color=GRAY).scale(1.5).next_to(
+            cube_best, direction=UP, buff=buff
+        )
+        counter_best = Integer(0, color=GRAY).scale(1.5).next_to(
+            cube_best, direction=DOWN, buff=buff
+        )
+
+        self.add(text_actual, text_best, counter_actual, counter_best)
+
+        for cube in [cube_best, cube_actual]:
+            util.scramble_to_feliks(cube)
+
+            # TODO: tady ty kostky otacim, aby to bylo z Feliksova pohledu, tj. nejvic
+            # se pouziva R a U. Zamichany stav kostky ale pak vypada jinak nez v ostatnich
+            # castech, kde kostka otocena neni. Vadi nam to?
+
+            # Rotate to get Feliks' POV
+            cube.rotate(PI / 2, RIGHT)
+            cube.rotate(PI / 2, UP)
+
+            # "rotate nicely"
+            cube.rotate(15 * DEGREES, axis=np.array([1, 0, 0]))
+            cube.rotate(15 * DEGREES, axis=np.array([0, 1, 0]))
+
+        self.add(cube_best, cube_actual)
+        self.wait()
+
+        for i, (move_actual, move_best) in enumerate(
+            zip_longest(util.FELIKS_ACTUAL_SOLUTION_MOVES, util.FELIKS_UNSCRAMBLE_MOVES)
+        ):
+            anims_cur = [cube_actual.animate.do_move(move_actual)]
+            if move_best is not None:
+                anims_cur += [cube_best.animate.do_move(move_best)]
+            self.play(*anims_cur, run_time=(10 / (15 + i)))
+
+            counter_actual.set_value(i + 1).set_color(GRAY)
+            if move_best is not None:
+                counter_best.set_value(i + 1).set_color(GRAY)
+
+        self.wait()
 
 
 class CubeGraph(ThreeDScene):
