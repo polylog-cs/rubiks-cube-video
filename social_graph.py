@@ -9,6 +9,7 @@ encodeColor = "red"
 decodeColor = "blue"
 keyColor = "blue"
 
+
 class GraphScene(Scene):
 	def construct(self):
 

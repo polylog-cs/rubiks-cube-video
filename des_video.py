@@ -1,78 +1,126 @@
+import string
 from manim import *
 from manim.utils import tex
 import numpy as np
 import math
 import textwrap
 import random
-
 from solarized import *
 # Temne pozadi
 
 config.background_color = BASE02
 
 keyColor = GRAY
+keyColor2= BASE1
 textColor = GRAY
 encodeColor = RED
 decodeColor = BLUE
+borderColor = GRAY
+fontSize = 20
+padding = 0.5 # between the text and the border around it
+
+
+def constructRandomStrings(numStrings = 10, lineLen = 8, numLines = 6):
+	letters = string.ascii_letters + string.digits
+	ret = []
+	for i in range(numStrings):
+		strList = []
+		for j in range(numLines):
+			str = r""
+			for k in range(lineLen):
+				str += random.choice(letters)
+			strList.append(str)
+		strList[-1] = strList[-1][:-3] + "..."
+		ret.append(strList)
+	return ret
+
+strPlainText = [
+	r"funny text",
+	r"shorter t",
+	r"funny text",
+	r"funny text",
+	r"funny text",
+	r"funny text"
+]
+strRandomTexts = constructRandomStrings()
+
 
 class DesIntro(Scene):
 	def construct(self):
 		# TODO: na začátku napsat "DES" a "Data Encryption Standard"
+		'''
+		The meet in the middle trick is very useful in solving other problems, so let me quickly mention a different one which does not include any networks. 
 
+		In 1970’s people created a cipher known as DES. DES means Data Encryption Standard - it was the standard cipher that everybody was using. It works as follows. 
+		You give DES some text and there is a secret key that only you know. This secret key is just a short string of 56 bits. 
+		The DES cipher, like other symmetric ciphers, consists of two functions. The encrypting function takes as input the text and the key and computes the ciphertext.
+		The decrypting function takes as input the ciphertext and the key, and it gives you back the original text. 
+
+		[Animace: Smysluplný plaintext - červená šipka, nad ní klíč (číslo?) - ciphertext.
+		pod tím: ciphertext - modrá šipka, nad ní klíč - stejný plaintext, plain text i ciphertext jsou stringy charů ne bitů]
+		'''
+
+		# DES -> Data Encryption Standard
+		DesTextPosition = 3*UP
+		DesText = Tex(r"DES", color = textColor)
+		DesText.move_to(DesTextPosition)
+		DesTextLong = Tex(r"Data Encryption Standard", color = textColor)
+		DesTextLong.move_to(DesTextPosition)
+
+		self.play(Write(DesText))
+		self.play(Transform(DesText, DesTextLong)) #TODO: vyhezkat, aby se písmenka DES jen posunula
+		#self.wait()
+
+		#first diagram
+		diagramPos = 1*UP
+		diagramWidth = 6*RIGHT
+		arrowLen = 3
+		keyWidth = 1.5
+		keyPadding = 0.8
+		textPadding = 0.1
+		keyInfoWidth = 3.0
+		keyInfoHeight = 2.0
 
 		#plain text
-
-		plainText = Tex(r"funny text", color = textColor)
-		plainText.shift(3*LEFT)
-		self.play(Write(plainText))
-
-
-		padding = 0.5
-		plainBorder = Rectangle(width = plainText.get_right()[0] - plainText.get_left()[0] + padding, 
-			height = plainText.get_top()[1] - plainText.get_bottom()[1] + padding)
-		plainBorder.move_to(plainText.get_center())
-
+		plainText = Group(*[
+			Tex(str, color = textColor, font_size = fontSize) for str in strPlainText
+		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
+		plainBorder = constructTextClipart(insideObject = plainText)
 		plainGroup = Group(plainText, plainBorder)
+		plainGroup.move_to(diagramPos - diagramWidth/2)
+		self.play(*[Write(text) for text in plainText], Create(plainBorder))
 
-		self.play(Create(plainBorder))
 
 		#encrypt arrow
-
-		arrowlen = 3
-		startArrow = plainBorder.get_right() + padding * RIGHT
-		endArrow = startArrow + arrowlen * RIGHT
+		startArrow = arrowLen * LEFT / 2 + diagramPos + keyPadding/3*DOWN
+		endArrow = arrowLen * RIGHT / 2 + diagramPos + keyPadding/3*DOWN
 		enArrow = Arrow(start = startArrow, end = endArrow, color = encodeColor)
 
-		enKey, enKeyLine, enKeyCirc = constructKey(shift = enArrow.get_center() + UP, width = enArrow.get_width())
-
-		#enKeyGroup = Group(enArrow, enKey, enKeyLine, enKeyCirc)
+		enKey, enKeyLine, enKeyCirc = constructKey(
+			position = enArrow.get_center() + keyPadding * UP, 
+			width = keyWidth
+		)
 
 		self.play(Create(enArrow), 
 			Create(enKey), 
 			Create(enKeyLine), 
 			Create(enKeyCirc))
 
-
-
 		# cipher text
-
-		cipherText = Tex("101011101...01", color = textColor)
+		cipherText = Group(*[
+			Tex(str, color = textColor, font_size = fontSize) for str in strRandomTexts[0]
+		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 		cipherText.next_to(enArrow, RIGHT)
-		cipherText.shift(padding * RIGHT)
-
-		self.play(Create(cipherText))
-
-		cipherBorder = Rectangle(width = cipherText.get_right()[0] - cipherText.get_left()[0] + padding, 
-			height = cipherText.get_top()[1] - cipherText.get_bottom()[1] + padding)
-		cipherBorder.move_to(cipherText.get_center())
-
-		self.play(Create(cipherBorder))
-
+		cipherText.shift(padding * RIGHT + keyPadding/3*UP)
+		cipherBorder = constructTextClipart(
+			insideObject = cipherText, 
+			width = plainBorder.get_right()[0] - plainBorder.get_left()[0], 
+			height = plainBorder.get_top()[1] - plainBorder.get_bottom()[1]
+		)
+		cipherGroup = Group(cipherText, cipherBorder)
+		self.play(*[Write(text) for text in cipherText], Create(cipherBorder))
 
 		# animate key
-
-		keyInfoWidth = 3.0
-		keyInfoHeight = 2.0
 		rec = [np.array([-keyInfoWidth/2, keyInfoHeight/2, 0]), 
 				np.array([-keyInfoWidth/2, -keyInfoHeight/2, 0]), 
 				np.array([keyInfoWidth/2, -keyInfoHeight/2, 0]), 
@@ -82,13 +130,13 @@ class DesIntro(Scene):
 		#rec = rec[1:] + rec[:1]
 
 		enKeyInfo = Polygon(*rec)
-		enKeyInfo.move_to(enArrow.get_center())
-		enKeyInfo.next_to(enArrow, UP)
-		enKeyInfo.shift(padding * UP)
+		enKeyInfo.move_to(enKey.get_center())
 
 		self.play(Uncreate(enKeyLine),
 			Uncreate(enKeyCirc))
 		self.play(Transform(enKey, enKeyInfo), run_time = 2)
+
+		return
 
 		ourKeyString = "10111...01"
 		txt = Tex(ourKeyString, color = textColor)
@@ -106,7 +154,7 @@ class DesIntro(Scene):
 			Uncreate(brace),
 			Uncreate(title))
 
-		enKeyNew, enKeyLine, enKeyCirc = constructKey(shift = enArrow.get_center() + UP, width = enArrow.get_width())		
+		enKeyNew, enKeyLine, enKeyCirc = constructKey(position = enArrow.get_center() + UP, width = enArrow.get_width())		
 
 		self.play(Transform(enKey, enKeyNew))
 		self.play(Create(enKeyLine),
@@ -123,7 +171,7 @@ class DesIntro(Scene):
 		# decrypt arrow 
 		decArrow = Arrow(start = endArrow, end = startArrow, color = decodeColor)
 
-		decKey, decKeyLine, decKeyCirc = constructKey(shift = decArrow.get_center() + UP, width = decArrow.get_width())		
+		decKey, decKeyLine, decKeyCirc = constructKey(position = decArrow.get_center() + UP, width = decArrow.get_width())		
 
 		self.play(Create(decArrow), 
 			Create(decKey), 
@@ -155,11 +203,11 @@ class DesIntro(Scene):
 
 		randKeyString = "10101...11"
 		randKey = Tex(randKeyString, color = textColor).move_to(ourKey.get_center())
-		randPlainText = Tex("dkDm2,Lkp", color = textColor).move_to(plainText.get_center())
+		randPlainText = Tex(random_strings[1], color = textColor).move_to(plainText.get_center())
 
 		randKeyString2 = "11001...10"
 		randKey2 = Tex(randKeyString2, color = textColor).move_to(ourKey.get_center())
-		randPlainText2 = Tex("Dy.dOnj:kp", color = textColor).move_to(plainText.get_center())
+		randPlainText2 = Tex(random_strings[2], color = textColor).move_to(plainText.get_center())
 
 
 		self.play(FadeOut(ourKey), FadeOut(plainText))
@@ -175,8 +223,63 @@ class DesIntro(Scene):
 
 		self.wait(3)
 		
+#TODO vyhezkat
+def constructTextClipart(insideObject = None, position = np.array([0, 0, 0]), width = None, height = None, color = borderColor):
+	#rec = RoundedRectangle(corner_radius = 0.1, color = color, height = height, width = width)
+	#rec.move_to(position)
 
-def constructKey(shift = np.array([0, 0, 0]), granularity = 100, width = 1):
+	if insideObject != None:
+		topPadding = 0.1 * padding
+		if width == None:
+			width = (insideObject.get_right() - insideObject.get_left())[0] + padding
+		if height == None:
+			height = (insideObject.get_top() - insideObject.get_bottom())[1] + padding + topPadding
+		position = insideObject.get_center() + topPadding + width/2 * LEFT + (height/2 + topPadding ) * UP
+
+	topleft = position
+	topright= topleft + width * RIGHT
+	bottomleft = position + height * DOWN
+	bottomright= bottomleft + width * RIGHT
+
+	d = width / 10
+	D = width / 4
+	infty = 10000000
+
+	noAngle = {'radius': infty, 'color': color}
+	dAngle = {'radius': d, 'color': color}
+	DAngle = {'radius': D*0.8, 'color': color}
+
+	rec = ArcPolygon(
+		topright + D * LEFT, 
+		topleft + d * RIGHT,
+		topleft + d * DOWN,
+		bottomleft + d * UP,
+		bottomleft + d * RIGHT,
+		bottomright + d * LEFT,
+		bottomright + d * UP,
+		topright + D * DOWN,
+		topright + D * LEFT,
+		topright + D * DOWN,
+		color = color,
+		arc_config = [
+			noAngle.copy(),
+			dAngle.copy(),
+			noAngle.copy(),
+			dAngle.copy(),
+			noAngle.copy(),
+			dAngle.copy(),
+			noAngle.copy(),
+			noAngle.copy(),
+			DAngle.copy(),
+			noAngle.copy()
+		]
+	)
+
+
+	return rec
+
+
+def constructKey(position = np.array([0, 0, 0]), granularity = 100, width = 1, color = [keyColor, keyColor2]):
 		
 		#right part of the key
 		key = [
@@ -258,50 +361,12 @@ def constructKey(shift = np.array([0, 0, 0]), granularity = 100, width = 1):
 		for pnt in key + keyline + [midcirc]:
 			pnt -= offset
 			pnt *= width / keyWidth
-			pnt += shift 
+			pnt += position 
 		
-		return Polygon(*key, fill_opacity = 1, color = keyColor), Polygon(*keyline, color = "red"), Circle(radius = radcirc, color = "red").move_to(midcirc)
+		return Polygon(*key, fill_opacity = 1, color = color[0]), \
+			Polygon(*keyline, color = color[1]), \
+			Circle(radius = radcirc, color = color[1]).move_to(midcirc)
 
-
-class Key(Scene):
-	def construct(self):
-
-
-
-		keyCenter = np.array([0, 0, 0])
-		T1 = constructKey(shift = keyCenter)
-
-		recWidth = 3.0
-		recHeight = 2.0
-		rec = [np.array([-recWidth/2, recHeight/2, 0]), 
-				np.array([recWidth/2, recHeight/2, 0]), 
-				np.array([recWidth/2, -recHeight/2, 0]), 
-				np.array([-recWidth/2, -recHeight/2, 0])]
-		rec = rec[1:] + rec[:1]
-		rec = rec[1:] + rec[:1]
-		#rec = rec[1:] + rec[:1]
-
-		T2 = Polygon(*rec)
-
-		self.play(Create(T1))
-		self.play(Transform(T1, T2), run_time = 2)
-
-		txt = Tex("101...01", color = textColor)
-		txt.move_to(T2.center())
-
-		brace = Brace(txt, UP)
-		
-
-		title = Tex("56 bits", color = textColor)
-		title.move_to(T2.center())
-		title.shift(1 * UP)
-
-		recInside = Group(txt, brace, title)
-		recInside.shift(0.4 * DOWN)
-
-		self.play(Write(txt), Create(brace), Write(title))
-
-		self.wait(10)
 
 class DesBruteForce(Scene):
 	def construct(self):

@@ -1,6 +1,7 @@
 from manim_rubikscube import *
 
 # https://ruwix.com/blog/feliks-zemdegs-rubiks-world-record-2016-4-73/
+# TODO check (with our program?) this is indeed the best solution
 FELIKS_SCRAMBLE_MOVES = [
     "U2",
     "F",
