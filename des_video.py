@@ -16,7 +16,8 @@ textColor = GRAY
 encodeColor = RED
 decodeColor = BLUE
 borderColor = GRAY
-fontSize = 20
+smallFontSize = 20
+fontSize = 40 # TODO zmenit na vychozi velikost (jak se zjisti?)
 padding = 0.5 # between the text and the border around it
 
 
@@ -71,44 +72,126 @@ class DesIntro(Scene):
 		self.play(Transform(DesText, DesTextLong)) #TODO: vyhezkat, aby se písmenka DES jen posunula
 		#self.wait()
 
-		#first diagram
-		diagramPos = 1*UP
-		diagramWidth = 6*RIGHT
+		#first diagram constants
+		midDiagramPos = 0*UP
+		topDiagramPos = 1*UP
+		bottomDiagramPos = 1*DOWN
+		diagramWidth = 5*RIGHT
 		arrowLen = 3
+		keyWidthLarge = 2.5
 		keyWidth = 1.5
 		keyPadding = 0.8
 		textPadding = 0.1
 		keyInfoWidth = 3.0
 		keyInfoHeight = 2.0
 
-		#plain text
-		plainText = Group(*[
-			Tex(str, color = textColor, font_size = fontSize) for str in strPlainText
-		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
-		plainBorder = constructTextClipart(insideObject = plainText)
-		plainGroup = Group(plainText, plainBorder)
-		plainGroup.move_to(diagramPos - diagramWidth/2)
-		self.play(*[Write(text) for text in plainText], Create(plainBorder))
 
-
-		#encrypt arrow
-		startArrow = arrowLen * LEFT / 2 + diagramPos + keyPadding/3*DOWN
-		endArrow = arrowLen * RIGHT / 2 + diagramPos + keyPadding/3*DOWN
-		enArrow = Arrow(start = startArrow, end = endArrow, color = encodeColor)
-
+		# first key occurence
 		enKey, enKeyLine, enKeyCirc = constructKey(
-			position = enArrow.get_center() + keyPadding * UP, 
-			width = keyWidth
+			position = midDiagramPos,
+			width = keyWidthLarge
 		)
 
-		self.play(Create(enArrow), 
+		self.play(
 			Create(enKey), 
 			Create(enKeyLine), 
 			Create(enKeyCirc))
+		self.wait()
+
+		rec = [np.array([-keyInfoWidth/2, keyInfoHeight/2, 0]), 
+				np.array([-keyInfoWidth/2, -keyInfoHeight/2, 0]), 
+				np.array([keyInfoWidth/2, -keyInfoHeight/2, 0]), 
+				np.array([keyInfoWidth/2, keyInfoHeight/2, 0])]
+		rec = rec[1:] + rec[:1]
+		rec = rec[1:] + rec[:1]
+		
+		enKeyInfo = Polygon(*rec, color = borderColor)
+		enKeyInfo.move_to(enKey.get_center())
+
+		self.play(Uncreate(enKeyLine),
+			Uncreate(enKeyCirc))
+		self.play(Transform(enKey, enKeyInfo), run_time = 2)
+
+		ourKeyString = "10111...01"
+		txt = Tex(ourKeyString, color = textColor)
+		brace = Brace(txt, UP, color = textColor)
+		title = Tex("56 bits", color = textColor)
+		
+		recInside = Group(txt, brace, title).arrange(UP)
+		recInside.move_to(enKeyInfo.get_center())
+
+		self.play(Write(txt), Create(brace), Write(title))
+		self.wait()
+
+		self.play(Uncreate(txt),
+			Uncreate(brace),
+			Uncreate(title))
+
+		enKeyNew, enKeyLine, enKeyCirc =  constructKey(
+			position = topDiagramPos + 1*UP,
+			width = keyWidthLarge
+		)	
+
+		self.play(Transform(enKey, enKeyNew))
+		self.play(Create(enKeyLine),
+			Create(enKeyCirc))
+
+		self.wait()
+
+		'''		
+		self.play(FadeOut(enArrow),
+		FadeOut(enKey),
+		FadeOut(enKeyLine),
+		FadeOut(enKeyCirc),
+		FadeOut(plainGroup))
+		'''
+		
+
+		#encryption
+
+		enDescription = Tex(
+			"Encryption:", 
+			color = textColor, 
+			font_size = fontSize
+		).move_to(midDiagramPos + 5.5 * LEFT)
+		self.play(Write(enDescription))
+		self.wait()
+
+		#plain text
+		plainText = Group(*[
+			Tex(str, color = textColor, font_size = smallFontSize) for str in strPlainText
+		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
+		plainBorder = constructTextClipart(insideObject = plainText)
+		plainGroup = Group(plainText, plainBorder)
+		plainGroup.move_to(midDiagramPos - diagramWidth/2)
+		self.play(*[Write(text) for text in plainText], Create(plainBorder))
+		self.wait()
+
+		#key moves
+		enKeyNew, enKeyLineNew, enKeyCircNew =  constructKey(
+			position = midDiagramPos + keyPadding*UP,
+			width = keyWidth
+		)	
+		self.play(
+			Transform(enKey, enKeyNew), 
+			Transform(enKeyLine, enKeyLineNew), 
+			Transform(enKeyCirc, enKeyCircNew)
+		)
+		self.wait()
+
+		#encrypt arrow
+		startArrow = arrowLen * LEFT / 2 + midDiagramPos + keyPadding/3*DOWN
+		endArrow = arrowLen * RIGHT / 2 + midDiagramPos + keyPadding/3*DOWN
+		enArrow = Arrow(start = startArrow, end = endArrow, color = encodeColor)
+
+		self.play(Create(enArrow))
+		self.wait()
+
+		
 
 		# cipher text
 		cipherText = Group(*[
-			Tex(str, color = textColor, font_size = fontSize) for str in strRandomTexts[0]
+			Tex(str, color = textColor, font_size = smallFontSize) for str in strRandomTexts[0]
 		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 		cipherText.next_to(enArrow, RIGHT)
 		cipherText.shift(padding * RIGHT + keyPadding/3*UP)
@@ -120,53 +203,7 @@ class DesIntro(Scene):
 		cipherGroup = Group(cipherText, cipherBorder)
 		self.play(*[Write(text) for text in cipherText], Create(cipherBorder))
 
-		# animate key
-		rec = [np.array([-keyInfoWidth/2, keyInfoHeight/2, 0]), 
-				np.array([-keyInfoWidth/2, -keyInfoHeight/2, 0]), 
-				np.array([keyInfoWidth/2, -keyInfoHeight/2, 0]), 
-				np.array([keyInfoWidth/2, keyInfoHeight/2, 0])]
-		rec = rec[1:] + rec[:1]
-		rec = rec[1:] + rec[:1]
-		#rec = rec[1:] + rec[:1]
-
-		enKeyInfo = Polygon(*rec)
-		enKeyInfo.move_to(enKey.get_center())
-
-		self.play(Uncreate(enKeyLine),
-			Uncreate(enKeyCirc))
-		self.play(Transform(enKey, enKeyInfo), run_time = 2)
-
 		return
-
-		ourKeyString = "10111...01"
-		txt = Tex(ourKeyString, color = textColor)
-		brace = Brace(txt, UP)
-		title = Tex("56 bits", color = textColor)
-		
-		recInside = Group(txt, brace, title).arrange(UP)
-		recInside.move_to(enKeyInfo.get_center())
-
-		self.play(Write(txt), Create(brace), Write(title))
-
-		self.wait()
-
-		self.play(Uncreate(txt),
-			Uncreate(brace),
-			Uncreate(title))
-
-		enKeyNew, enKeyLine, enKeyCirc = constructKey(position = enArrow.get_center() + UP, width = enArrow.get_width())		
-
-		self.play(Transform(enKey, enKeyNew))
-		self.play(Create(enKeyLine),
-			Create(enKeyCirc))
-
-		self.wait()
-
-		self.play(FadeOut(enArrow),
-		FadeOut(enKey),
-		FadeOut(enKeyLine),
-		FadeOut(enKeyCirc),
-		FadeOut(plainGroup))
 
 		# decrypt arrow 
 		decArrow = Arrow(start = endArrow, end = startArrow, color = decodeColor)
