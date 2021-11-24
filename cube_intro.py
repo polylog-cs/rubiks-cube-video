@@ -59,7 +59,6 @@ class MoveDefinition(ThreeDScene):
     def construct(self):
         """
         Co počítáme jako jeden move?
-        TODO: zároveň otáčet a pohybovat kostkou, ukázat všech 18 možných moves
 
         What counts as one move? Say that for simplicity, we will assume that we
         never rotate the cube as a whole, so the middle cubies will always stay
@@ -146,8 +145,6 @@ class MoveDefinition(ThreeDScene):
 class FeliksVsOptimal(ThreeDScene):
     def construct(self):
         """
-        TODO: srovnat nejrychlejší řešení na čas a počet otočení
-
         For example, with this definition the position that Mr. Zemdegs solved
         can be solved in 18 moves, although Mr. Zemdegs’s solution was of course
         different and used 44 moves.
@@ -164,17 +161,25 @@ class FeliksVsOptimal(ThreeDScene):
         )
 
         buff = 1
-        text_actual = Tex("Feliks Zemdegs", color=GRAY).scale(1.5).next_to(
-            cube_actual, direction=UP, buff=buff
+        text_actual = (
+            Tex("Feliks Zemdegs", color=GRAY)
+            .scale(1.5)
+            .next_to(cube_actual, direction=UP, buff=buff)
         )
-        counter_actual = Integer(0, color=GRAY).scale(1.5).next_to(
-            cube_actual, direction=DOWN, buff=buff
+        counter_actual = (
+            Integer(0, color=GRAY)
+            .scale(1.5)
+            .next_to(cube_actual, direction=DOWN, buff=buff)
         )
-        text_best = Tex("Omniscient being", color=GRAY).scale(1.5).next_to(
-            cube_best, direction=UP, buff=buff
+        text_best = (
+            Tex("Omniscient being", color=GRAY)
+            .scale(1.5)
+            .next_to(cube_best, direction=UP, buff=buff)
         )
-        counter_best = Integer(0, color=GRAY).scale(1.5).next_to(
-            cube_best, direction=DOWN, buff=buff
+        counter_best = (
+            Integer(0, color=GRAY)
+            .scale(1.5)
+            .next_to(cube_best, direction=DOWN, buff=buff)
         )
 
         self.add(text_actual, text_best, counter_actual, counter_best)
@@ -290,10 +295,6 @@ class CubeGraph(ThreeDScene):
 class NumberOfStates(Scene):
     def construct(self):
         """
-        TODO: vizualizovat čísla zmíněná okolo počtu stavů. Pro zkrášlení můžeme
-        přidat nějakou kostku co se tam bude prostě náhodně otáčet.
-        (Pak by superclass musel být ThreeDScene místo Scene)
-
         So can this work? Let’s try to find some basic parameters of Rubik’s
         cube. A quick Wikipedia search shows that the number of its states
         reachable from the starting one is exactly 43252003274489856000 which is
@@ -308,7 +309,55 @@ class NumberOfStates(Scene):
         say, a few hours. Although 10^10 is also a huge number it is laughably
         small if you compare it with 10^20.
         """
-        pass
+        parts_s = ["43", "252", "003", "274", "489", "856", "000"]
+        scale_coef = 1.1
+        scale_base = 2.0
+
+        parts = [
+            Tex(p, color=GRAY).scale(scale_base * scale_coef ** (len(parts_s) - 1 - i))
+            for i, p in enumerate(parts_s)
+        ]
+        group = Group()
+
+        for i, part in enumerate(parts):
+            if i > 0:
+                part.next_to(
+                    parts[i - 1], buff=0.3 * scale_coef ** (len(parts_s) - 1 - i)
+                )
+            self.play(Write(part))
+            group.add(part)
+            if i > 0:
+                self.play(
+                    group.animate.shift(-group.get_center()).scale(1 / scale_coef),
+                    run_time=0.3,
+                )
+
+        self.wait()
+
+        ten_to_twenty = MathTex(r"\approx 10^{20}", color=GRAY).scale(scale_base)
+        ten_to_twenty.next_to(group, direction=DOWN).align_to(group, RIGHT)
+        self.play(Write(ten_to_twenty))
+
+        self.wait()
+        self.play(group.animate.shift(UP * 2.5), ten_to_twenty.animate.shift(UP * 2.5))
+        self.wait()
+
+        ten_to_ten_decimal = (
+            MathTex(r"10\,000\,000\,000", color=GRAY)
+            .scale(scale_base)
+            .align_to(group, RIGHT)
+            .shift(DOWN * 1.3)
+        )
+        ten_to_ten_scientific = (
+            MathTex(r"= 10^{10}", color=GRAY)
+            .scale(scale_base)
+            .next_to(ten_to_ten_decimal, direction=DOWN)
+            .align_to(group, RIGHT)
+        )
+
+        self.play(Write(ten_to_ten_decimal))
+        self.play(Write(ten_to_ten_scientific))
+        self.wait()
 
 
 class Neighborhood(ThreeDScene):
