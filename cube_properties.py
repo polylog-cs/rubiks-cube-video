@@ -1,3 +1,6 @@
+import random
+import math
+
 from manim import *
 
 # Use our fork of manim_rubikscube!
@@ -12,6 +15,9 @@ try:
     from tqdm import trange
 except ImportError:
     trange = range
+
+cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
+
 
 class Neighborhood(ThreeDScene):
     def construct(self):
@@ -433,22 +439,166 @@ class NeighborCount(ThreeDScene):
         self.wait()
 
 
+def bfs(adj, start):
+    res_vertices = [[start]]
+    res_edges = [[]]
+    seen = set([start])
+
+    while True:
+        cur_vertices = []
+        cur_edges = []
+
+        for v1 in res_vertices[-1]:
+            for v2 in adj[v1]:
+                cur_edges.append((v1, v2))
+
+                if v2 not in seen:
+                    cur_vertices.append(v2)
+                    seen.add(v2)
+
+        if cur_vertices:
+            res_vertices.append(cur_vertices)
+            res_edges.append(cur_edges)
+        else:
+            res_edges.append(cur_edges)
+            break
+
+    return res_vertices, res_edges
+
+
 class FriendshipGraph(Scene):
     def construct(self):
         """
-        TODO: ukázat malý friendship graph (Karate Club? Pán prstenů?
-        Erdös-Renyi?) a pak v něm udělat BFS, ukázat že malá vzdálenost pokryje
-        všechny vrcholy.
-
         For example, you may have heard about the six degrees of separation
         phenomenon that says that you can reach anybody on earth via 6
         intermediate friends.
 
-        TODO: chceme k tomuhle odstavci nějakou animaci?
         In fact, researchers have verified that, at least on Facebook, you are
         connected to pretty much anybody with just 4 intermediate friends.
         Again, this is because, intuitively, the number of people reached is
         always multiplied by something like 50-100 in every step, since the
         average person has around 100 friends.
         """
-        pass
+        N = 50
+
+        # re-generate graph until
+        max_steps = 3
+
+        random.seed(4)
+
+        while True:
+            g = dict([(i, []) for i in range(N)])
+            vertices = []
+            edges = []
+
+            for i in range(N):
+                vertices.append(i)
+                # the distribution of k defines the graph's density
+                k = random.randrange(2, 4)
+                adj = set(random.choices(range(N), k=k))
+
+                try:
+                    # Remove self-loop
+                    adj.remove(i)
+                except KeyError:
+                    pass
+
+                for j in adj:
+                    g[i].append(j)
+                    g[j].append(i)
+                    edges.append((i, j))
+
+            bfs_vertices, bfs_edges = bfs(g, 0)
+            bfs_vertices.append([])
+
+            print("Actual steps:", len(bfs_vertices) - 2)
+            if len(bfs_vertices) <= max_steps + 2:
+                break
+
+        ganim = Graph(
+            vertices,
+            edges,
+            layout="kamada_kawai",
+            layout_scale=5,
+            vertex_config={"fill_color": GRAY},
+            edge_config={"stroke_color": GRAY},
+        )
+
+        ganim.scale_to_fit_height(7.5)
+        ganim.move_to(RIGHT*2)
+
+        text_scale = 2
+        steps_tex = (
+            Tex("Steps: 0", color=GRAY)
+            .scale(text_scale)
+            .next_to(ganim, direction=LEFT, buff=0.5)
+        )
+
+        ganim.move_to(ORIGIN)
+
+        guy = ImageMobject("img/excited_guy.png").set_z_index(100)
+
+        self.play(FadeIn(ganim))
+        self.wait()
+        self.play(FadeIn(guy))
+        self.wait()
+        self.play(guy.animate.move_to(ganim.vertices[0].get_center()).scale(0.2))
+        self.wait()
+        self.play(
+            ganim.animate.shift(RIGHT*2),
+            guy.animate.shift(RIGHT*2),
+            FadeIn(steps_tex)
+        )
+        self.wait()
+
+        highlight_color = RED
+        flash_color = YELLOW
+
+        for i, (l_vertices, l_edges) in enumerate(zip(bfs_vertices, bfs_edges)):
+            anims = []
+
+            if i != len(bfs_vertices) - 1:
+                steps_tex2 = (
+                    Tex(f"Steps: {i}", color=GRAY)
+                    .scale(text_scale)
+                    .align_to(steps_tex, direction=LEFT)
+                )
+                anims.append(steps_tex.animate.become(steps_tex2))
+
+            for v in l_vertices:
+                anims.append(
+                    FadeIn(
+                        Dot(
+                            ganim.vertices[v].get_center(),
+                            color=highlight_color,
+                            z_index=10,
+                        )
+                    )
+                )
+                anims.append(
+                    Flash(
+                        ganim.vertices[v].get_center(),
+                        color=flash_color,
+                        z_index=10,
+                        time_width=0.5,
+                    )
+                )
+
+            for e in l_edges:
+                swapped = False
+                if e not in ganim.edges:
+                    i, j = e
+                    e = j, i
+                    swapped = True
+
+                edge = ganim.edges[e]
+
+                start, end = edge.get_start_and_end()
+                if swapped:
+                    start, end = end, start
+
+                anims.append(Create(Line(start, end, color=highlight_color)))
+
+            self.play(*anims)
+
+        self.wait()
