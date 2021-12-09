@@ -107,16 +107,13 @@ def generate_path_animations(center, angle, base_radius, radius_step, n_steps):
 class BFSOneSide(ThreeDScene):
     def construct(self):
         """
-        TODO: animace kde je nalevo scrambled kostka, napravo složená, přidáváme
+        animace kde je nalevo scrambled kostka, napravo složená, přidáváme
         “slupky” kolem scrambled, vnější slupka se vzdáleností 20 už obsahuje
         složenou kostku.
 
         Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
 
         Ukázat slupky z obou stran, musí se protínat
-
-        TODO: nějak navázat na následující animaci, ideálně ale rozdělit aby se
-        to snáz renderovalo
         """
         self.camera.set_focal_distance(20000.0)
 
@@ -154,13 +151,20 @@ class BFSOneSide(ThreeDScene):
             self.wait()
 
             # Ztratí se slupky až na prvních 10, ty tu kostku neobsahují.
+            label2 = MathTex(str(n_steps_small), color=RED)
+
             self.play(
                 *[
                     FadeOut(circle)
-                    for circle in circle_anims_from.circles[n_steps_small:]
+                    for circle in circle_anims_from.circles[n_steps_small-1:-1]
                 ],
-                FadeOut(circle_anims_from.label),
+                # FadeOut(circle_anims_from.label),
+                circle_anims_from.circle.animate.scale_to_fit_height(
+                    circle_anims_from.circles[n_steps_small - 1].height
+                ),
+                circle_anims_from.label.animate.become(label2)
             )
+
             self.wait()
 
             # Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
@@ -196,17 +200,22 @@ class BFSOneSide(ThreeDScene):
             FadeIn(circle_anims_from.circles[n_steps_small - 1]),
             FadeIn(circle_anims_from.label),
         )
-        self.wait()
+        self.wait(2)
 
-        self.play(*[FadeOut(mob) for mob in self.mobjects])
+        self.play(
+            FadeOut(circle_anims_from.circles[n_steps_small - 1]),
+            FadeOut(circle_anims_from.label),
+            FadeOut(circle_anims_to.circles[n_steps_small - 1]),
+            FadeOut(circle_anims_to.label),
+        )
         self.wait()
+        # self.play(*[FadeOut(mob) for mob in self.mobjects])
 
 
 class CubeMITM(ThreeDScene):
     def construct(self):
         """
         Meet in the middle.
-        TODO: změnit, aby odpovídalo textu:
 
         Ok, why is this useful? Well, instead of starting on one side and trying
         to reach the other, we can actually search from both sides at once and
@@ -290,7 +299,7 @@ class CubeMITM(ThreeDScene):
             # if i == 4:
             #     break
 
-        self.wait()
+        self.play(cube_from.animate.shift(ORIGIN), run_time=2)
 
 
 class MemoryIssues(ThreeDScene):
@@ -300,7 +309,7 @@ class MemoryIssues(ThreeDScene):
 
         So in terms of time, we’re in the clear. But another issue arises if we
         try to actually implement this idea: memory. Storing 10^10 cube
-        configurations would require about XYZ GB, a bit too much for our poor
+        configurations would require about 80 GB, a bit too much for our poor
         laptops. This means that we need to use some additional trickery to make
         the code work. But it can be done - if you’re curious, check out the
         code linked in the video description. We also include a bit about the
@@ -309,12 +318,10 @@ class MemoryIssues(ThreeDScene):
         of the cube graph, which allows them to be much faster than our simple
         meet in the middle search.
 
-        The trick that we have used is called the meet in the middle trick, for
-        obvious reasons. In this special instance, it is also called
-        bidirectional search. The only property of the cube graph that we
-        exploited is that the number of explored nodes grows very rapidly.
-        Graphs with this property are more common than you think, not just
-        rubik’s cube graph and friendship networks. Again, more in the video
-        description!
+        TODO: chceme tohle?
+        The only property of the cube graph that we exploited is that the number
+        of explored nodes grows very rapidly. Graphs with this property are more
+        common than you think, not just rubik’s cube graph and friendship
+        networks. Again, more in the video description!
         """
         pass
