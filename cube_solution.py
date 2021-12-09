@@ -116,6 +116,7 @@ class BFSOneSide(ThreeDScene):
         Ukázat slupky z obou stran, musí se protínat
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         base_radius = 0.9
         radius_step = 0.3
@@ -226,6 +227,7 @@ class CubeMITM(ThreeDScene):
         two partial paths to get the best solution.
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         base_radius = 0.9
         radius_step = 0.3
@@ -305,7 +307,7 @@ class CubeMITM(ThreeDScene):
 class MemoryIssues(ThreeDScene):
     def construct(self):
         """
-        TODO: vymyslet animaci k tomuhle:
+        TODO: vymyslet animaci k tomuhle. Je nějaká potřeba?
 
         So in terms of time, we’re in the clear. But another issue arises if we
         try to actually implement this idea: memory. Storing 10^10 cube

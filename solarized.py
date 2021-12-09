@@ -22,7 +22,8 @@ BASE3 = "#fdf6e3"
 
 YELLOW = "#d0b700"
 YELLOW2 = "#b58900" # The original Solarized yellow
-ORANGE = "#cb4b16"
+ORANGE = "#c1670c"
+ORANGE2 = "#cb4b16" # The original Solarized orange - too close to red
 RED = "#dc322f"
 MAGENTA = "#d33682"
 VIOLET = "#6c71c4"

@@ -22,11 +22,10 @@ cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 class Neighborhood(ThreeDScene):
     def construct(self):
         """
-        TODO: ukázat graf stavů z nějakého konkrétního do hloubky 1, pak 2, pak
-        3 (pokud to půjde). Do hloubky 3 už asi nemůžeme ukazovat v každém
-        vrcholu kostku.
+        Ukázat graf stavů ze do hloubky 1, pak 2.
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         self.next_section("First layer", skip_animations=True)
 
@@ -184,6 +183,11 @@ class Neighborhood(ThreeDScene):
                             )
                         )
 
+        for cube in cubes1 + [q[0]]:
+            # Dummy animations to keep the cubes on top
+            self.bring_to_front(cube)
+            anims.append(cube.animate.shift(ORIGIN))
+
         self.play(*anims)
         self.wait()
 
@@ -244,7 +248,7 @@ class BFSTest(ThreeDScene):
 class NeighborCount(ThreeDScene):
     def construct(self):
         """
-        TODO: čísla s počtem vrcholů do vzdálenosti n, pro n = 1, 2, 3. Pak
+        Čísla s počtem vrcholů do vzdálenosti n, pro n = 1, 2, 3. Pak
         ukázat, že je to vždycky zhruba *10.
 
         Well, one clear property is that the number of reachable configurations
@@ -268,6 +272,7 @@ class NeighborCount(ThreeDScene):
         larger, but close enough.
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         self.next_section("Table", skip_animations=False)
 

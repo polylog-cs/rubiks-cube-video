@@ -14,24 +14,66 @@ import util
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
+class Logo(ThreeDScene):
+    def construct(self):
+        text_color = GRAY
+        buffer_h = 2.7
+        buffer_v = 1.3  # pripadne: 1.5
+        row_shift = 0.35  # pripadne: 0
+
+        a = []
+        for i in range(3):
+            row = []
+            for j in range(3):
+                cur = Tex(r"log", color=text_color)
+                cur.scale(4).shift(
+                    (j * buffer_h + i * row_shift) * RIGHT + i * buffer_v * DOWN
+                )
+                row.append(cur)
+
+            a += row
+
+        group = Group(*a)
+        group.move_to(ORIGIN)
+
+        if False:
+            w, h = 14, 8.2
+            w = h
+            bg = Polygon(
+                np.array([-w / 2, h / 2, 0]),
+                np.array([w / 2, h / 2, 0]),
+                np.array([-w / 2, -h / 2, 0]),
+                color=BASE02,
+                fill_opacity=1,
+            )
+
+            self.add(bg, *a)
+
+
 class ChannelIntro(ThreeDScene):
     def construct(self):
         text_color = GRAY
 
-        # TODO: napsat kdo co delal?
-        volhejn = Tex(r"Václav Volhejn", color=text_color)
-        rozhon = Tex(r"Václav Rozhoň", color=text_color)
-        hlasek = Tex(r"Filip Hlásek", color=text_color)
+        buffer = 0.7
 
-        # TODO: tady je nerovnomerne odradkovani :(
-        names = Group(rozhon, volhejn, hlasek).arrange(DOWN)
-        names.shift(2 * DOWN + 4 * RIGHT)
+        rozhon = Tex(
+            r"\textbf{Václav Rozhoň}: script writer, animation", color=text_color
+        )
+        volhejn = Tex(
+            r"\textbf{Václav Volhejn}: voice, animation, script editor",
+            color=text_color,
+        ).shift(DOWN * buffer)
+        hlasek = Tex(r"\textbf{Filip Hlásek}: code", color=text_color).shift(
+            2 * DOWN * buffer
+        )
 
-        volhejn.align_to(names, RIGHT)
-        rozhon.align_to(names, RIGHT)
-        hlasek.align_to(names, RIGHT)
+        names = Group(rozhon, volhejn, hlasek)
+        names.shift(2 * DOWN + LEFT)
 
-        # TODO: logo kanalu?
+        volhejn.align_to(names, LEFT)
+        rozhon.align_to(names, LEFT)
+        hlasek.align_to(names, LEFT)
+
         channel_name = Tex(r"polylog", color=text_color)
         channel_name.scale(4).shift(1 * UP)
 
@@ -43,10 +85,10 @@ class ChannelIntro(ThreeDScene):
             Write(channel_name, run_time=run_time),
         )
 
-        self.wait(1)
+        self.wait(3)
 
         self.play(
-            Unwrite(volhejn),
+            Unwrite(volhejn, reverse=True),
             Unwrite(rozhon),
             Unwrite(hlasek),
             Unwrite(channel_name),
@@ -67,10 +109,9 @@ class MoveDefinition(ThreeDScene):
         rotated to three new positions, hence 18 total possibilities.
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         faces = "UDLRFB"
-        moves = [pre + suf for suf in ["", "'", "2"] for pre in faces]
-
         positions = []
 
         for dy in range(3):
@@ -81,8 +122,6 @@ class MoveDefinition(ThreeDScene):
 
         self.play(FadeIn(first_cube))
         self.play(Rotate(first_cube, 2 * PI, UP), run_time=3)
-
-        # shift_by = UP * 3
 
         self.play(first_cube.animate.scale(0.5))
 
@@ -102,15 +141,10 @@ class MoveDefinition(ThreeDScene):
 
         self.wait()
 
-        # TODO: dát místo linear interpolace něco hladšího?
-        for _ in range(4):
-            self.play(
-                *[
-                    CubeMove(cube, face, rate_func=linear)
-                    for cube, face in zip(cubes, faces)
-                ],
-                run_time=0.5,
-            )
+        self.play(
+            *[CubeMove(cube, face + "4") for cube, face in zip(cubes, faces)],
+            run_time=3,
+        )
 
         self.wait()
 
@@ -148,6 +182,7 @@ class FeliksVsOptimal(ThreeDScene):
         different and used 44 moves.
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         cube_distance = 7
 
@@ -214,7 +249,8 @@ class FeliksVsOptimal(ThreeDScene):
             if move_best is not None:
                 counter_best.set_value(i + 1).set_color(GRAY)
 
-        # TODO: odkazat na cube20.org
+        self.wait()
+        self.play(FadeIn(Tex("cube20.org", color=GRAY)))
         self.wait()
 
 
@@ -246,6 +282,7 @@ class CubeGraph(ThreeDScene):
         encounter the solved configuration.
         """
         self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
 
         # TODO: najit zajimavejsi graf, ve kterem existuji dve cesty (dve reseni)
         # ktere se netrivialne lisi a jedna je rychlejsi.
