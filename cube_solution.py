@@ -104,7 +104,7 @@ def generate_path_animations(center, angle, base_radius, radius_step, n_steps):
     return points, animations
 
 
-class BFSOneSide(ThreeDScene):
+class BFSOneSide(util.RubikScene):
     def construct(self):
         """
         animace kde je nalevo scrambled kostka, napravo složená, přidáváme
@@ -118,9 +118,6 @@ class BFSOneSide(ThreeDScene):
         TODO: kdyby se neprotinaly: dat kostky dal od sebe, ukazat "pravitko"
         co ukaze ze vzdalenost je '>20'
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         base_radius = 0.9
         radius_step = 0.3
         n_steps = 20
@@ -216,7 +213,7 @@ class BFSOneSide(ThreeDScene):
         # self.play(*[FadeOut(mob) for mob in self.mobjects])
 
 
-class CubeMITM(ThreeDScene):
+class CubeMITM(util.RubikScene):
     def construct(self):
         """
         Meet in the middle.
@@ -229,9 +226,6 @@ class CubeMITM(ThreeDScene):
         the scrambled cube and from the solved one. Then we simply connect these
         two partial paths to get the best solution.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         base_radius = 0.9
         radius_step = 0.3
         n_steps = 9
@@ -305,28 +299,3 @@ class CubeMITM(ThreeDScene):
             #     break
 
         self.play(cube_from.animate.shift(ORIGIN), run_time=2)
-
-
-class MemoryIssues(ThreeDScene):
-    def construct(self):
-        """
-        TODO: vymyslet animaci k tomuhle. Je nějaká potřeba?
-
-        So in terms of time, we’re in the clear. But another issue arises if we
-        try to actually implement this idea: memory. Storing 10^10 cube
-        configurations would require about 80 GB, a bit too much for our poor
-        laptops. This means that we need to use some additional trickery to make
-        the code work. But it can be done - if you’re curious, check out the
-        code linked in the video description. We also include a bit about the
-        state-of-the-art solving algorithms. Those algorithms also use the meet
-        in the middle idea, but they also exploit some more specific properties
-        of the cube graph, which allows them to be much faster than our simple
-        meet in the middle search.
-
-        TODO: chceme tohle?
-        The only property of the cube graph that we exploited is that the number
-        of explored nodes grows very rapidly. Graphs with this property are more
-        common than you think, not just rubik’s cube graph and friendship
-        networks. Again, more in the video description!
-        """
-        pass

@@ -19,7 +19,7 @@ except ImportError:
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
-class Neighborhood(ThreeDScene):
+class Neighborhood(util.RubikScene):
     def construct(self):
         """
         Ukázat graf stavů ze do hloubky 1, pak 2.
@@ -27,9 +27,6 @@ class Neighborhood(ThreeDScene):
         TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je
         TODO: v druhe fazi jdou cary pres kostky
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         self.next_section("First layer", skip_animations=True)
 
         edges = set()
@@ -195,7 +192,7 @@ class Neighborhood(ThreeDScene):
         self.wait()
 
 
-class BFSTest(ThreeDScene):
+class BFSTest(util.RubikScene):
     def construct(self):
         """
         Ukázka BFS z jednoho vrcholu, pro testování
@@ -248,7 +245,7 @@ class BFSTest(ThreeDScene):
         self.wait()
 
 
-class NeighborCount(ThreeDScene):
+class NeighborCount(util.RubikScene):
     def construct(self):
         """
         Čísla s počtem vrcholů do vzdálenosti n, pro n = 1, 2, 3. Pak
@@ -274,9 +271,6 @@ class NeighborCount(ThreeDScene):
         nodes seen will be around 10^5. Again, it’s actually about 6 times
         larger, but close enough.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         self.next_section("Table", skip_animations=False)
 
         table_group = Group()
@@ -621,20 +615,4 @@ class FriendshipGraph(Scene):
 
             self.play(*anims)
 
-        self.wait()
-
-
-class SoundExample(Scene):
-    # Source of sound under Creative Commons 0 License. https://freesound.org/people/Druminfected/sounds/250551/
-    def construct(self):
-        dot = Dot().set_color(GREEN)
-        sound = "audio/bfs/bfs_002.wav"
-        self.add_sound(sound)
-        self.add(dot)
-        self.wait()
-        self.add_sound(sound)
-        dot.set_color(BLUE)
-        self.wait()
-        self.add_sound(sound)
-        dot.set_color(RED)
         self.wait()

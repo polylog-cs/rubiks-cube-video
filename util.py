@@ -1,4 +1,18 @@
 from manim_rubikscube import *
+from manim import ThreeDScene
+
+
+class RubikScene(ThreeDScene):
+    def __init__(self, *args, **kwargs):
+        super(RubikScene, self).__init__(*args, **kwargs)
+        self.camera.set_focal_distance(20000.0)
+        self.camera.should_apply_shading = False
+        self.bfs_counter = 0
+
+    def play_bfs_sound(self, time_offset=0):
+        self.add_sound(f"audio/bfs/bfs_{self.bfs_counter:03d}", time_offset=time_offset)
+        self.bfs_counter += 1
+
 
 # https://ruwix.com/blog/feliks-zemdegs-rubiks-world-record-2016-4-73/
 # TODO check (with our program?) this is indeed the best solution
