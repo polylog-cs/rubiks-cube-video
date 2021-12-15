@@ -731,7 +731,7 @@ class TripleDes(Scene):
 		"""
 
 		# beginning of the scene
-		self.next_section(skip_animations=True)
+		self.next_section(skip_animations=False)
 
 		DesTextPosition = 3*UP
 		DesText = Tex(r"DES", color = textColor).move_to(DesTextPosition)
