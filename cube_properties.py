@@ -26,6 +26,7 @@ class Neighborhood(util.RubikScene):
 
         TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je
         TODO: v druhe fazi jdou cary pres kostky
+        TODO: zvuk - stoupající akordy na rhodes?
         """
         self.next_section("First layer", skip_animations=True)
 
@@ -475,7 +476,7 @@ def bfs(adj, start):
     return res_vertices, res_edges
 
 
-class FriendshipGraph(Scene):
+class FriendshipGraph(util.RubikScene):
     def construct(self):
         """
         For example, you may have heard about the six degrees of separation
@@ -499,6 +500,7 @@ class FriendshipGraph(Scene):
         max_steps = 3
 
         random.seed(4)
+        attempts = 0
 
         while True:
             g = dict([(i, []) for i in range(N)])
@@ -525,9 +527,13 @@ class FriendshipGraph(Scene):
             bfs_vertices, bfs_edges = bfs(g, 0)
             bfs_vertices.append([])
 
-            print("Actual steps:", len(bfs_vertices) - 2)
+            # print("Actual steps:", len(bfs_vertices) - 2)
             if len(bfs_vertices) <= max_steps + 2 and len(g[0]) <= 3:
                 break
+
+            attempts += 1
+            if attempts % 100 == 0:
+                print(f"{attempts} unsuccessful attempts")
 
         ganim = Graph(
             vertices,
@@ -601,8 +607,7 @@ class FriendshipGraph(Scene):
             for e in l_edges:
                 swapped = False
                 if e not in ganim.edges:
-                    i, j = e
-                    e = j, i
+                    e = e[1], e[0]
                     swapped = True
 
                 edge = ganim.edges[e]
@@ -613,6 +618,8 @@ class FriendshipGraph(Scene):
 
                 anims.append(Create(Line(start, end, color=highlight_color)))
 
+            if i > 0:
+                self.play_bfs_sound(time_offset=0.2)
             self.play(*anims)
 
         self.wait()

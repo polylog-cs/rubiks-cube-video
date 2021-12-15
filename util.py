@@ -1,5 +1,5 @@
 from manim_rubikscube import *
-from manim import ThreeDScene
+from manim import ThreeDScene, smooth
 
 
 class RubikScene(ThreeDScene):
@@ -9,7 +9,11 @@ class RubikScene(ThreeDScene):
         self.camera.should_apply_shading = False
         self.bfs_counter = 0
 
-    def play_bfs_sound(self, time_offset=0):
+    def play_bfs_sound(self, time_offset=0, animation_run_time=None):
+        if animation_run_time is not None:
+            assert time_offset == 0, "Nelze nastavit jak time_offset tak animation_length"
+            time_offset = max(0, min(animation_run_time - 0.2, animation_run_time * 0.5))
+
         self.add_sound(f"audio/bfs/bfs_{self.bfs_counter:03d}", time_offset=time_offset)
         self.bfs_counter += 1
 

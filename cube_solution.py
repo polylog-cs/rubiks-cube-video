@@ -117,6 +117,8 @@ class BFSOneSide(util.RubikScene):
 
         TODO: kdyby se neprotinaly: dat kostky dal od sebe, ukazat "pravitko"
         co ukaze ze vzdalenost je '>20'
+
+        TODO: akordiky na fadeout/překryv?
         """
         base_radius = 0.9
         radius_step = 0.3
@@ -147,23 +149,32 @@ class BFSOneSide(util.RubikScene):
 
         if True:
             for i, anims in enumerate(circle_anims_from):
-                self.play(*anims, run_time=2 / (i + 2))
+                run_time = 2 / (i + 2)
+                self.play_bfs_sound(animation_run_time=run_time)
+                self.play(*anims, run_time=run_time)
 
             self.wait()
 
             # Ztratí se slupky až na prvních 10, ty tu kostku neobsahují.
             label2 = MathTex(str(n_steps_small), color=RED)
 
+            for i in reversed(range(n_steps_small, n_steps)):
+                self.bfs_counter = i
+                self.play_bfs_sound(
+                    # time_offset=util.inverse_smooth(1 - (i - n_steps_small) / (n_steps - n_steps_small))
+                    time_offset=(1 - (i - n_steps_small) / (n_steps - n_steps_small))
+                )
+
             self.play(
                 *[
                     FadeOut(circle)
-                    for circle in circle_anims_from.circles[n_steps_small-1:-1]
+                    for circle in circle_anims_from.circles[n_steps_small - 1 : -1]
                 ],
                 # FadeOut(circle_anims_from.label),
                 circle_anims_from.circle.animate.scale_to_fit_height(
                     circle_anims_from.circles[n_steps_small - 1].height
                 ),
-                circle_anims_from.label.animate.become(label2)
+                circle_anims_from.label.animate.become(label2),
             )
 
             self.wait()
@@ -173,7 +184,9 @@ class BFSOneSide(util.RubikScene):
                 *[
                     FadeOut(circle)
                     for circle in circle_anims_from.circles[:n_steps_small]
-                ]
+                ],
+                FadeOut(circle_anims_from.label),
+                FadeOut(circle_anims_from.circle),
             )
 
         circle_anims_to = BFSCircleAnimations(
@@ -184,7 +197,10 @@ class BFSOneSide(util.RubikScene):
             radius_step=radius_step,
         )
 
+        self.bfs_counter = 0
+
         for i, anims in enumerate(circle_anims_to):
+            self.play_bfs_sound(animation_run_time=run_time)
             self.play(*anims, run_time=0.1)
 
         self.wait()
@@ -260,7 +276,9 @@ class CubeMITM(util.RubikScene):
         )
 
         for anims_from, anims_to in zip(circle_anims_from, circle_anims_to):
+            self.play_bfs_sound(animation_run_time=1/3)
             self.play(*anims_from, run_time=1 / 3)
+            self.play_bfs_sound(animation_run_time=1/3)
             self.play(*anims_to, run_time=1 / 3)
 
         self.wait()
