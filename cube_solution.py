@@ -114,6 +114,9 @@ class BFSOneSide(ThreeDScene):
         Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
 
         Ukázat slupky z obou stran, musí se protínat
+
+        TODO: kdyby se neprotinaly: dat kostky dal od sebe, ukazat "pravitko"
+        co ukaze ze vzdalenost je '>20'
         """
         self.camera.set_focal_distance(20000.0)
         self.camera.should_apply_shading = False

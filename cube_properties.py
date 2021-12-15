@@ -23,6 +23,9 @@ class Neighborhood(ThreeDScene):
     def construct(self):
         """
         Ukázat graf stavů ze do hloubky 1, pak 2.
+
+        TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je
+        TODO: v druhe fazi jdou cary pres kostky
         """
         self.camera.set_focal_distance(20000.0)
         self.camera.should_apply_shading = False
@@ -406,6 +409,13 @@ class NeighborCount(ThreeDScene):
                             edge = graph.edges[(((i, j), cur))]
                             anims[edge_distance + 1].append(edge.animate.set_color(RED))
 
+        run_time = 0.25
+        lag_ratio = 0.9
+
+        for it in range(len(anims)):
+            offset = run_time * lag_ratio * (it + 0.5)
+            self.add_sound(f"audio/bfs/bfs_{it:03d}", time_offset=offset)
+
         self.play(
             LaggedStart(
                 *[AnimationGroup(*anims_step, run_time=0.25) for anims_step in anims],
@@ -418,7 +428,7 @@ class NeighborCount(ThreeDScene):
         values_manhattan = [
             [Tex(r"\textbf{Steps}", color=GRAY), Tex(r"\textbf{Explored}", color=GRAY)],
             [MathTex("5", color=GRAY), MathTex("61", color=GRAY)],
-            [MathTex("n", color=RED), MathTex("\sim n^2", color=RED)],
+            [MathTex("n", color=RED), MathTex("\sim 2n^2", color=RED)],
         ]
         table_manhattan = Group(*[cell for row in values_manhattan for cell in row])
         table_manhattan.arrange_in_grid(
@@ -483,6 +493,11 @@ class FriendshipGraph(Scene):
         Again, this is because, intuitively, the number of people reached is
         always multiplied by something like 50-100 in every step, since the
         average person has around 100 friends.
+
+        TODO: po BFS zvyraznit cestu mezi excited typkem a Feliksem,
+        pak nechat zmizet zbytek grafu, ukazat jen "rovnou" cestu.
+        Pak Feliks zmizi a misto nej bude Grant Sanderson, s tim
+        ze se taky zvysi pocet intermediaries.
         """
         N = 50
 
@@ -499,7 +514,7 @@ class FriendshipGraph(Scene):
             for i in range(N):
                 vertices.append(i)
                 # the distribution of k defines the graph's density
-                k = random.randrange(2, 4)
+                k = random.randrange(2, 5)
                 adj = set(random.choices(range(N), k=k))
 
                 try:
@@ -517,7 +532,7 @@ class FriendshipGraph(Scene):
             bfs_vertices.append([])
 
             print("Actual steps:", len(bfs_vertices) - 2)
-            if len(bfs_vertices) <= max_steps + 2:
+            if len(bfs_vertices) <= max_steps + 2 and len(g[0]) <= 3:
                 break
 
         ganim = Graph(
@@ -530,7 +545,7 @@ class FriendshipGraph(Scene):
         )
 
         ganim.scale_to_fit_height(6.5)
-        ganim.move_to(RIGHT*2)
+        ganim.move_to(RIGHT * 2)
 
         text_scale = 1.8
         steps_tex = (
@@ -550,9 +565,9 @@ class FriendshipGraph(Scene):
         self.play(guy.animate.move_to(ganim.vertices[0].get_center()).scale(0.2))
         self.wait()
         self.play(
-            ganim.animate.shift(RIGHT*2),
-            guy.animate.shift(RIGHT*2),
-            FadeIn(steps_tex)
+            ganim.animate.shift(RIGHT * 2),
+            guy.animate.shift(RIGHT * 2),
+            FadeIn(steps_tex),
         )
         self.wait()
 
@@ -606,4 +621,20 @@ class FriendshipGraph(Scene):
 
             self.play(*anims)
 
+        self.wait()
+
+
+class SoundExample(Scene):
+    # Source of sound under Creative Commons 0 License. https://freesound.org/people/Druminfected/sounds/250551/
+    def construct(self):
+        dot = Dot().set_color(GREEN)
+        sound = "audio/bfs/bfs_002.wav"
+        self.add_sound(sound)
+        self.add(dot)
+        self.wait()
+        self.add_sound(sound)
+        dot.set_color(BLUE)
+        self.wait()
+        self.add_sound(sound)
+        dot.set_color(RED)
         self.wait()
