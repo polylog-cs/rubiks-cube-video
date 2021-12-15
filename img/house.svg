@@ -1,0 +1,15 @@
+<?xml version="1.0"?><svg width="640" height="480" xmlns="http://www.w3.org/2000/svg">
+ <title>house</title>
+ <g>
+  <title>Layer 1</title>
+  <g id="g638">
+   <rect height="112.98997" id="rect604" width="68.201149" x="201.228881" y="65.76004" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill="#ffffff"/>
+   <rect height="210.17676" id="rect590" width="299.4299" x="175.825191" y="223.70547" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill="#ffffff"/>
+   <rect height="161.72548" id="rect592" width="97.890549" x="334.177581" y="270.16422" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill="#ffffff"/>
+   <rect height="77.73661" id="rect593" width="77.73661" x="214.693541" y="288.70834" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill="#ffffff"/>
+   <path d="m254.650696,290.722046l0,71.254883" id="path594" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill-opacity="0.75" fill="#ffffff"/>
+   <path d="m290.278137,326.349487l-71.254944,0" id="path595" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill-opacity="0.75" fill="#ffffff"/>
+   <path d="m144.224976,237.750854l363.400146,0l-183.87616,-179.155186l-179.523987,179.155186z" id="path602" stroke-width="12.5" stroke="#000000" fill-rule="evenodd" fill="#ffffff"/>
+  </g>
+ </g>
+</svg>
