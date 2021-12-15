@@ -7,7 +7,7 @@ import textwrap
 import random
 from solarized import *
 # Temne pozadi
-#config.background_color = BASE02
+config.background_color = BASE02
 
 random.seed(0)
 
@@ -24,7 +24,7 @@ fontSize = 40 # TODO zmenit na vychozi velikost (jak se zjisti?)
 padding = 0.5 # between the text and the border around it
 
 
-#first diagram constants
+#some random constants
 midDiagramPos = 0*UP
 topDiagramPos = 1*UP
 bottomDiagramPos = 2*DOWN
@@ -39,6 +39,23 @@ keyInfoHeight = 2.0
 leftTextPos = 5.5 * LEFT
 minTime = 0.3
 
+posPlain = bottomDiagramPos + 6 * LEFT
+posFinal = bottomDiagramPos + 6 * RIGHT
+
+cipherPositions = [
+	2*posPlain/3 + posFinal/3,
+	posPlain/3 + 2*posFinal/3,
+	bottomDiagramPos + 6 * RIGHT,
+]
+
+keyPositions = [
+	(posPlain + cipherPositions[0])/2,
+	(cipherPositions[0] + cipherPositions[1])/2,
+	(cipherPositions[1] + cipherPositions[2])/2
+]
+
+def flatten(t):
+	return [item for sublist in t for item in sublist]
 
 # constructing random strings inside keys and ciphertexts
 def constructRandomString(lineLen = 8, numLines = 6):
@@ -62,39 +79,63 @@ strPlainText = [
 ]
 strCipherText = constructRandomString()
 
-def constructRandomKeyString(len1 = 3, len2 = 5):
-	str = ""
-	for _ in range(len1):
-		str += random.choice(["0", "1"])
-	str += "..."	
-	for _ in range(len2):
-		str += random.choice(["0", "1"])
-	return str
+def constructRandomKeyString(len1 = 3, len2 = 5, prefix = None, suffix = None):
+	st = ""
+	if prefix is None:
+		for _ in range(len1):
+			st += random.choice(["0", "1"])
+	else:
+		st += ('{0:0'+str(len1)+'b}').format(prefix)
+	st += "..."	
+	if suffix is None:
+		for _ in range(len2):
+			st += random.choice(["0", "1"])
+	else:
+		st += ('{0:0'+str(len2)+'b}').format(suffix)
+	return st
 
 zeroString = "000...00000"
 ourKeyString = "101...01110"
 randKeyString = constructRandomKeyString()
 unknownKeyString = "???...?????"
+zeroStringShort = "00...00"
 
 # text object
 class Btext:
-	def __init__(self, strLines, position = np.array([0, 0, 0]), width = None, height = None):
+	def __init__(self, strLines, position = np.array([0, 0, 0]), width = None, height = None, fill_color = None, fill_opacity = 0.0):
 		self.position = position
 		self.width = width
 		self.height = height
 		self.strLines = strLines
+		self.fill_color = fill_color
+		self.fill_opacity = fill_opacity
 
 		self.lines = Group(*[
-			Tex(str, color = textColor, font_size = smallFontSize) for str in strLines
+			Tex(
+				str, 
+				color = textColor, 
+				font_size = smallFontSize,
+			) for str in strLines
 		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 
 		self.border = constructTextBorder(
 			insideObject = self.lines,
 			width = self.width,
-			height = self.height
+			height = self.height, 
+			fill_color = self.fill_color,
+			fill_opacity = self.fill_opacity,
 		)
 
-		self.textBorder = Group(self.lines, self.border)
+		self.lines = Group(*[
+			Tex(
+				str, 
+				color = textColor, 
+				font_size = smallFontSize,
+			) for str in strLines
+		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
+
+
+		self.textBorder = Group(self.border, self.lines)
 		if self.width == None:
 			self.width = self.textBorder.width
 			self.height = self.textBorder.height
@@ -107,22 +148,38 @@ class Btext:
 		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding).move_to(self.lines.get_center())
 
 		if empty == False:
-			return AnimationGroup(*[Transform(line, newline) for (line, newline) in zip(self.lines, newLines)])
+			return AnimationGroup(*[Transform(line, newline) for (line, newline) in zip(self.lines, newLines)], lag_ratio = 0.2)
 		else:
 			self.lines = newLines
-			return AnimationGroup(*[Write(line) for line in self.lines])
+			return AnimationGroup(*[Write(line) for line in self.lines], lag_ratio = 0.2)
 
 	def create(self, position = None, noText = False):
 		if position is not None:
 			self.position = position
-		self.textBorder.move_to(self.position)
+		
+		self.border.move_to(self.position)
+		self.lines.move_to(self.position + np.array([0, 0, 1]))
 		
 		if noText == False:
-			anim = [Write(text) for text in self.lines]
+			anim = AnimationGroup(
+				*[Write(text) for text in self.lines],
+				lag_ratio = 0.2
+			)
 		else:
-			anim = []
-		anim.append(Create(self.border))
-		return AnimationGroup(*anim)
+			anim = AnimationGroup()
+
+		return AnimationGroup(
+			Create(self.border),
+			anim, 
+		)
+	
+	def highlight(self):
+		animl = [
+			self.border.animate().set_z_index(9999999)#.set_color(RED) # TODO zmenit
+		]
+		return AnimationGroup(
+			*animl
+		)
 
 	def move_to(self, position):
 		self.position = position
@@ -132,6 +189,12 @@ class Btext:
 
 	def shift(self, vec):
 		return self.move_to(self.position + vec)
+
+	def remove(self):
+		return AnimationGroup(
+			*[FadeOut(l) for l in self.lines],
+			*[FadeOut(self.border)]
+		)
 
 
 # key object
@@ -382,6 +445,9 @@ class Key:
 		)
 		return anim
 
+	def moveRec(self, pos, noBrace=False):
+		return self.shiftRec(pos - self.position, noBrace = noBrace)
+
 	def createRedArrow(self, position = None):
 		if not position is None:
 			self.position = position
@@ -430,6 +496,19 @@ class Key:
 		return AnimationGroup(
 			Uncreate(self.blueArrow)
 		)	
+
+	def remove(self):
+		anims = [
+			Uncreate(self.border),
+			Uncreate(self.brace),
+			Unwrite(self.title),
+			Unwrite(self.text),
+		]
+		if self.redActive == True:
+			anims.append(Uncreate(self.redArrow))
+		if self.blueActive == True:
+			anims.append(Uncreate(self.blueArrow))
+		return AnimationGroup(*anims)
 
 class DesIntro(Scene):
 	def construct(self):
@@ -639,11 +718,7 @@ class DesIntro(Scene):
 			run_time = 1	
 		)
 		
-		'''for obj in everything: 
-			obj.z_index = 1
-		backgroundRect.z_index = 0
-		self.wait(3)
-		'''
+
 
 class DesBruteForce(Scene):
 	def construct(self):
@@ -739,20 +814,7 @@ class TripleDes(Scene):
 		
 		self.add(DesText)
 
-		posPlain = bottomDiagramPos + 6 * LEFT
-		posFinal = bottomDiagramPos + 6 * RIGHT
-		
-		cipherPositions = [
-			2*posPlain/3 + posFinal/3,
-			posPlain/3 + 2*posFinal/3,
-			bottomDiagramPos + 6 * RIGHT,
-		]
-		
-		keyPositions = [
-			(posPlain + cipherPositions[0])/2,
-			(cipherPositions[0] + cipherPositions[1])/2,
-			(cipherPositions[1] + cipherPositions[2])/2
-		]
+
 		keyStrings = [
 			constructRandomKeyString(len1 = 2, len2 = 2),
 			constructRandomKeyString(len1 = 2, len2 = 2),
@@ -844,8 +906,7 @@ class TripleDes(Scene):
 		newKeys[2][0].color = RED # TODO ?
 		newKeys[2][1].color = RED
 
-		def flatten(t):
-		    return [item for sublist in t for item in sublist]
+
 
 		newTitle = Tex(r"112 bits", color = textColor).move_to(topKeys[1].title.get_center())
 		newBrace = Brace(Group(newKeys[0][1], newKeys[1][1]), UP, color = textColor).move_to(topKeys[1].brace)
@@ -900,8 +961,230 @@ class DesMITM(Scene):
 
 		"""
 		
-		
+		# beginning of the scene
+		self.next_section(skip_animations=False)
 
+		global posPlain, posFinal
+		for val in [posPlain, posFinal]:
+			val += midDiagramPos - bottomDiagramPos
+		posInter = 0.6 * posPlain + 0.4 * posFinal
+		posKey = (posPlain + posInter) / 2
+
+		posInter2 = 0.4 * posPlain + 0.6 * posFinal
+		posKey2 = (posFinal + posInter2) / 2
+
+
+		DesTextPosition = 3*UP
+		DesText = Tex(r"Double DES", color = textColor).move_to(DesTextPosition)		
+		self.add(DesText)
+
+		plain = Btext(
+			strPlainText, 
+			position = posPlain,
+		)
+		self.play(
+			plain.create(),
+			run_time = 1  
+		)
+
+		cipher = Btext(
+			constructRandomString(), 
+			position = posFinal,
+			width = plain.width,
+			height = plain.height
+		)
+		self.play(
+			cipher.create(),
+			run_time = 1  
+		)		
+
+		# generating all intermediate strings
+
+
+		key = Key(zeroString, position = posKey)
+
+		self.play(
+			#inter.create(),
+			key.createRectangleKey(),
+			key.createRedArrow()
+		)
+
+		topLeft = topDiagramPos + 1*RIGHT
+		databasePositions = []
+		databaseInters = []
+		keyStrings = []
+		
+		w = 2
+		h = 2
+		for i in range(h):
+			for j in range(w):
+				databasePositions.append(topLeft + i * 0.7 * DOWN + j * 0.3 * RIGHT)
+		for i in range(h*w):
+			keyStrings.append(constructRandomKeyString(
+				len1 = 3,
+				len2 = 5,
+				prefix = int(((2 ** 3)*i)/(1.0*h*w)),
+				suffix = None if i<h*w-1 else (2 ** 5 - 1)
+			))
+
+
+		self.wait()
+
+		anims = []
+		for it, (pos, keyString) in enumerate(zip(databasePositions, keyStrings)):
+			curInter = Btext( # TODO fix visibility of the text
+				#strPlainText,
+				constructRandomString(),
+				position = posInter, 
+				width = plain.width,
+				height = plain.height,
+				fill_color = config.background_color,
+				fill_opacity = 1
+			)
+			databaseInters.append(curInter)
+
+			anims.append(Succession(
+				AnimationGroup(
+					curInter.create(),
+					run_time = 0.01
+				),
+				AnimationGroup(
+					Wait()
+				),
+				AnimationGroup(
+					AnimationGroup(
+						curInter.move_to(pos),
+						run_time = 0.3
+					),
+					AnimationGroup(
+						key.changeText(keyString),
+						run_time = 0.1
+					),
+					lag_ratio = 0.0
+				)
+			))
+
+		self.play(AnimationGroup(
+			*anims, 
+			lag_ratio = 0.1
+		))
+
+
+		datSizeBrace = Brace(Group(*databaseInters), direction = DOWN).shift(5 * textPadding * DOWN)
+		datSizeText = Text(r"$2^{56}$ intermediate texts").next_to(datSizeBrace,DOWN)
+		datSize = Group(
+			datSizeBrace,
+			datSizeText
+		)
+		self.play(
+			Create(datSizeBrace),
+			Write(datSizeText)
+		)
+
+		self.next_section(skip_animations=False)
+
+		# key disappears and database shifts
+
+		shft = 4*LEFT
+		self.play(
+			key.remove(),
+			*[
+				bt.shift(4*shft) 
+				for bt in databaseInters
+			],
+			datSize.animate().shift(4*LEFT)
+		)
+
+		# blue key appears
+
+		key2 = Key(
+			zeroString,
+			position = posKey2
+		)
+
+		inter = Btext(
+			constructRandomString(), 
+			position = posInter2,
+			width = plain.width,
+			height = plain.height
+		)
+
+		self.play(
+			key2.createRectangleKey(),
+			key2.createBlueArrow(),
+			inter.create()
+		)
+		
+		# trying blue keys
+
+		t = 5
+		for i in range(t):
+			newKeyStr = constructRandomKeyString(
+				prefix = int((i * (2 ** 3)) / (1.5 * t))
+			)
+
+			self.play(
+				key2.changeText(newKeyStr),
+				inter.changeText(constructRandomString()),
+				run_time = 0.2
+			)
+
+		self.next_section(skip_animations=False)
+
+		# we found one
+		hit = 1
+		strLinesHit = databaseInters[hit].strLines.copy()
+
+		inter2 = Btext(
+			strLinesHit,
+			position = databaseInters[hit].position,
+			width = databaseInters[hit].width,
+			height = databaseInters[hit].height,
+			fill_color = config.background_color,
+			fill_opacity = 1
+		)
+
+		self.play(
+			key2.changeText("101...10010"),
+			inter.changeText(strLinesHit),
+			run_time = 0.2
+		)
+
+		self.play(
+			inter2.create(),
+			run_time = 0.01
+		)
+		self.wait()
+		self.play(
+			Circumscribe(inter.border),
+			Circumscribe(inter2.border)
+		)
+
+		self.play(
+			*[datInter.remove() for datInter in databaseInters],
+			inter2.move_to(inter2.position)
+		)
+
+		self.play(
+			inter.move_to((plain.position + cipher.position)/2),
+			key2.moveRec(plain.position/4 + cipher.position*3.0/4),
+			inter2.move_to((plain.position + cipher.position)/2 ),
+		)
+
+		key = Key(
+			constructRandomKeyString(),
+			position = plain.position*3.0/4 + cipher.position/4
+		)
+		self.play(
+			key.createRectangleKey(),
+			key.createRedArrow()
+		)
+		self.play(
+			key2.removeBlueArrow(),
+			key.removeRedArrow()
+		)
+
+		self.wait()
 
 
 class GeneralMITM(Scene):
@@ -919,7 +1202,7 @@ class GeneralMITM(Scene):
 		pass
 
 
-def constructTextBorder(insideObject = None, position = np.array([0, 0, 0]), width = None, height = None, color = borderColor):
+def constructTextBorder(insideObject = None, position = np.array([0, 0, 0]), width = None, height = None, color = borderColor, fill_color = None, fill_opacity = 0.0):
 	#rec = RoundedRectangle(corner_radius = 0.1, color = color, height = height, width = width)
 	#rec.move_to(position)
 
@@ -967,7 +1250,9 @@ def constructTextBorder(insideObject = None, position = np.array([0, 0, 0]), wid
 			noAngle.copy(),
 			DAngle.copy(),
 			noAngle.copy()
-		]
+		],
+		fill_color = fill_color,
+		fill_opacity = fill_opacity
 	)
 
 

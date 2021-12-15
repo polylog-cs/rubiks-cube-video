@@ -187,6 +187,7 @@ neighbors in the full graph!
 
 class FancyGraph(ThreeDScene):#MovingCameraScene):
     def construct(self):
+        self.next_section(skip_animations=False)
         #self.camera.frame.save_state()
 
         solved = RubiksCube(cubie_size=0.3)
@@ -296,6 +297,7 @@ class FancyGraph(ThreeDScene):#MovingCameraScene):
         positions = [c.get_center() / 1.0 for c in nodes]
         posedges = [ (nodes.index(u), nodes.index(v)) for u, v in edges]
 
+        # small score means graph is scattered
         def score():
             sc = 0.0
             
@@ -318,6 +320,7 @@ class FancyGraph(ThreeDScene):#MovingCameraScene):
 
             return sc
 
+        #randomly shift nodes until the graph is scattered
         if False:
             if score() == float('inf'):
                 positions = [pos/1.2 for pos in positions]
@@ -340,16 +343,15 @@ class FancyGraph(ThreeDScene):#MovingCameraScene):
                     positions[i] = oldpos
 
 
+        # animate creation of the graph
+
         self.add(solved)
 
         created = set()
         created.add(solved)
-        
-        it = 0
+        cubes_on_scene = [solved]
+
         while anims_to_do:
-            it += 1
-            if it > 20:
-                break
             print(len(anims_to_do))
             anims = []
             active = set()
@@ -357,10 +359,12 @@ class FancyGraph(ThreeDScene):#MovingCameraScene):
             leftover = []
             for (c1, c2, move) in anims_to_do:
                 if c1 in created and not c1 in active:
+                    cnew = c1.copy()
                     anims += [
-                        CubeMove(c1.copy(),  move = move, target_position = c2.get_center()),
+                        CubeMove(cnew,  move = move, target_position = c2.get_center()),
                         Create(Line(c1.get_center(), c2.get_center()))
                     ]
+                    cubes_on_scene.append(cnew)
                     active.add(c1)
                     to_create.add(c2)
                 else:
@@ -373,23 +377,98 @@ class FancyGraph(ThreeDScene):#MovingCameraScene):
             anims_to_do = leftover    
             created = created.union(to_create)
 
+        # change to houses
 
-        # add to scene
-        for cube, pos in zip(nodes, positions):
-            cube.move_to(pos)
-            self.add(cube)
+        self.next_section(skip_animations=False)
 
-        for e in edges:
-            r1, r2 = e
-            self.add(Line(r1.get_center(), r2.get_center()))
-      
-        return 
+        houses = [
+            ImageMobject(
+                "img/house.png"
+            ).move_to(c.get_center())
+            for c in cubes_on_scene
+        ]
+
+        icons = [
+            ImageMobject(
+                "img/icon.png"
+            ).move_to(c.get_center())
+            for c in cubes_on_scene
+        ]
+
+        infty = 10000.0
+        for c, house, icon in zip(cubes_on_scene, houses, icons):
+            house.width = icon.width = c.width 
+            house.scale(1.0/infty)
+            icon.scale(1.0/infty)
+
+        # cubes disappear
+        anims = []
+        for cube in cubes_on_scene:
+            anims.append(
+                cube.animate().scale(1.0 / infty)
+            )
+
         self.play(
-            self.camera.frame.animate.set(width=text.width * 1.2),
-            Uncreate(text),
-            run_time = 3
+            *anims
         )
 
+        # houses appear and disappear
+        
+        self.add(
+            *houses
+        )
+
+        self.play(
+            *[
+                house.animate().scale(infty)
+                for house in houses
+            ]
+        )
+
+        self.play(
+            *[
+                house.animate().scale(0)
+                for house in houses
+            ]
+        )
+        self.remove(
+            *houses
+        )
+
+        # icons appear and disappear
+        
+        self.add(
+            *icons
+        )
+
+        self.play(
+            *[
+                icon.animate().scale(infty)
+                for icon in icons
+            ]
+        )
+
+        self.play(
+            *[
+                icon.animate().scale(0)
+                for icon in icons
+            ]
+        )
+
+        self.remove(
+            *icons
+        )
+
+        # cubes appear
+        anims = []
+        for cube in cubes_on_scene:
+            anims.append(
+                cube.animate().scale(infty)
+            )
+
+        self.play(
+            *anims
+        )
 
 class FeliksVsOptimal(ThreeDScene):
     def construct(self):
