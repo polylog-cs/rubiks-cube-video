@@ -6,8 +6,13 @@ import math
 import textwrap
 import random
 from solarized import *
-# Temne pozadi
+
+# Use our fork of manim_rubikscube!
+from manim_rubikscube import *
+
+# Temne pozadi, ale zakomentovat pro intro a generalMITM !!!
 config.background_color = BASE02
+
 
 random.seed(0)
 
@@ -24,7 +29,7 @@ fontSize = 40 # TODO zmenit na vychozi velikost (jak se zjisti?)
 padding = 0.5 # between the text and the border around it
 
 
-#some random constants
+#first diagram constants
 midDiagramPos = 0*UP
 topDiagramPos = 1*UP
 bottomDiagramPos = 2*DOWN
@@ -37,7 +42,8 @@ textPadding = 0.1
 keyInfoWidth = 3.0
 keyInfoHeight = 2.0
 leftTextPos = 5.5 * LEFT
-minTime = 0.3
+invMinTime = 8
+minTime = 1.0 / invMinTime
 
 posPlain = bottomDiagramPos + 6 * LEFT
 posFinal = bottomDiagramPos + 6 * RIGHT
@@ -93,16 +99,15 @@ def constructRandomKeyString(len1 = 3, len2 = 5, prefix = None, suffix = None):
 	else:
 		st += ('{0:0'+str(len2)+'b}').format(suffix)
 	return st
-
 zeroString = "000...00000"
+oneString = "000...00001"
 ourKeyString = "101...01110"
 randKeyString = constructRandomKeyString()
 unknownKeyString = "???...?????"
-zeroStringShort = "00...00"
 
 # text object
 class Btext:
-	def __init__(self, strLines, position = np.array([0, 0, 0]), width = None, height = None, fill_color = None, fill_opacity = 0.0):
+	def __init__(self, strLines, position = np.array([0, 0, 0]), width = None, height = None, scale = 1.0, fill_color = None, fill_opacity = 0.0):
 		self.position = position
 		self.width = width
 		self.height = height
@@ -115,7 +120,7 @@ class Btext:
 				str, 
 				color = textColor, 
 				font_size = smallFontSize,
-			) for str in strLines
+			).scale(scale) for str in strLines
 		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 
 		self.border = constructTextBorder(
@@ -124,22 +129,22 @@ class Btext:
 			height = self.height, 
 			fill_color = self.fill_color,
 			fill_opacity = self.fill_opacity,
-		)
+		).scale(scale)
 
-		self.lines = Group(*[
-			Tex(
-				str, 
-				color = textColor, 
-				font_size = smallFontSize,
-			) for str in strLines
-		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
+		# self.lines = Group(*[
+		# 	Tex(
+		# 		str, 
+		# 		color = textColor, 
+		# 		font_size = smallFontSize,
+		# 	) for str in strLines
+		# ]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 
 
 		self.textBorder = Group(self.border, self.lines)
 		if self.width == None:
 			self.width = self.textBorder.width
 			self.height = self.textBorder.height
-	
+		
 	def changeText(self, newStrLines, empty = False):
 		self.strLines = newStrLines
 
@@ -172,7 +177,7 @@ class Btext:
 			Create(self.border),
 			anim, 
 		)
-	
+
 	def highlight(self):
 		animl = [
 			self.border.animate().set_z_index(9999999)#.set_color(RED) # TODO zmenit
@@ -199,22 +204,22 @@ class Btext:
 
 # key object
 class Key:
-	def __init__(self, keyString, position = np.array([0, 0, 0]), clipartWidth = keyWidthLarge, upShift = 0.5*UP):
+	def __init__(self, keyString, position = np.array([0, 0, 0]), scale = 1.0, clipartWidth = keyWidthLarge, upShift = 0.5*UP):
 		self.keyString = keyString
 		self.clipartWidth = clipartWidth
 		self.position = position
 		self.upShift = upShift
 
-		self.text = Tex(keyString, color = textColor).move_to(self.position)
-		self.brace = Brace(self.text, UP, color = textColor).shift(textPadding * UP)
-		self.title = Tex("56 bits", color = textColor)
+		self.text = Tex(keyString, color = textColor).move_to(self.position).scale(scale)
+		self.brace = Brace(self.text, UP, color = textColor).shift(textPadding * UP).scale(scale)
+		self.title = Tex("56 bits", color = textColor).scale(scale)
 		self.braceTitle = Group(self.brace, self.title).arrange(UP)
 
 		self.border = Rectangle(
 			width = self.text.get_right()[0] - self.text.get_left()[0] + padding, 
 			height = self.text.get_top()[1] - self.text.get_bottom()[1] + padding, 
 			color = keyColor
-		)
+		).scale(scale)
 		#TODO maybe rotate rect
 
 		self.border.move_to(self.position)
@@ -258,6 +263,40 @@ class Key:
 		self.keyString = newKeyString
 		newText = Tex(self.keyString, color = textColor).move_to(self.text.get_center())
 		return Transform(self.text, newText)
+
+	def changeTextandSize(self, newKeyString, shift = 0):
+		self.keyString = newKeyString
+		newText = Tex(self.keyString, color = textColor).move_to(self.text.get_center())
+		newBorder = Rectangle(
+			width = newText.get_right()[0] - newText.get_left()[0] + padding, 
+			height = newText.get_top()[1] - newText.get_bottom()[1] + padding, 
+			color = keyColor
+		).move_to(self.border.get_center())
+		newBrace = Brace(newText, UP, color = textColor).move_to(self.brace.get_center())
+		newTitle = Tex("56 bits", color = textColor).move_to(self.title.get_center())
+		newRedArrow = Arrow(
+			start = newBorder.get_left(),
+			end = newBorder.get_right(),
+			color = encodeColor,
+			buff = 0
+		).move_to(self.redArrow.get_center())
+	
+
+		Group(
+			newText,
+			newBorder,
+			newBrace,
+			newTitle,
+			newRedArrow
+		).shift(shift)
+
+		return AnimationGroup(
+			Transform(self.text, newText),
+			Transform(self.border, newBorder),
+			Transform(self.brace, newBrace),
+			Transform(self.title, newTitle),
+			Transform(self.redArrow, newRedArrow)
+		)
 
 	def createRectangleKey(self, position = None, noBrace = False):
 		if not position is None:
@@ -444,9 +483,24 @@ class Key:
 			*animl
 		)
 		return anim
-
+	
 	def moveRec(self, pos, noBrace=False):
 		return self.shiftRec(pos - self.position, noBrace = noBrace)
+
+	def removeRec(self, noBrace = False):
+		
+		anims = [
+			Uncreate(self.border),
+			Unwrite(self.text)
+		]
+
+		if noBrace == False:
+			anims.append(Uncreate(self.brace))
+			anims.append(Unwrite(self.title))
+
+		return AnimationGroup(
+			*anims
+		)
 
 	def createRedArrow(self, position = None):
 		if not position is None:
@@ -553,7 +607,7 @@ class DesIntro(Scene):
 
 		[self.play(anim) for anim in key.transformClipartToRectangle(position = midDiagramPos)]
 
-		[self.play(anim) for anim in key.transformRectangleToClipart(position = topDiagramPos + 1*UP)]
+		[self.play(anim) for anim in key.transformRectangleToClipart(position = topDiagramPos)]
 
 
 		#encryption
@@ -718,7 +772,11 @@ class DesIntro(Scene):
 			run_time = 1	
 		)
 		
-
+		'''for obj in everything: 
+			obj.z_index = 1
+		backgroundRect.z_index = 0
+		self.wait(3)
+		'''
 
 class DesBruteForce(Scene):
 	def construct(self):
@@ -728,6 +786,12 @@ class DesBruteForce(Scene):
 		občas string bitů. Napravo je cipher text a checkujeme (posouváme ho?)
 		zda matchuje naše CipherTexty
 		"""
+
+		self.next_section(skip_animations = True)
+
+		DesTextPosition = 3*UP
+		DesText = Tex(r"DES", color = textColor).move_to(DesTextPosition)
+		self.play(Write(DesText))
 
 		# create plain and cipher text
 
@@ -741,7 +805,7 @@ class DesBruteForce(Scene):
 			cipher.create()
 		)
 
-		key = Key(unknownKeyString, position = midDiagramPos + keyPadding * UP)
+		key = Key(unknownKeyString, position = midDiagramPos)
 		self.play(
 			key.createRectangleKey()
 		)
@@ -753,41 +817,97 @@ class DesBruteForce(Scene):
 
 		)
 
-		guess = Btext(constructRandomString(), position = midDiagramPos + 1 * RIGHT)
+		guess = Btext(
+			constructRandomString(), 
+			position = 2 * key.position - plain.position, 
+			width = plain.width, 
+			height = plain.height
+		)
 
 
 		self.play(
 			#key.changeText(zeroString),
 			guess.create(noText = True),
+			key.createRedArrow(),
 			run_time = 1
 		)
 
 
+		self.next_section(skip_animations = False)
+
+		# first go one by one
 		waitingTimes = []
-		L = 4 # TODO víc
+		L = 10 # TODO víc 
 		for i in range(L):
 			waitingTimes.append(
-				max(1 - i * 1.0 / L, minTime)
+				max((1.0 - (i * 1.0 / L)), minTime)
 			)
+		for i in range(1000):
+			waitingTimes.append(minTime)
 		
+		cumTimes = np.cumsum(np.array(waitingTimes))
+		np.insert(cumTimes, 0, 0)
+		
+		anims = []
+
 		cnt = 0
-		for t in waitingTimes:
+		for _, t in enumerate(waitingTimes):
 			actString = "000..." + '{0:05b}'.format((cnt % 32))
 
-			self.play(
-				key.changeText(actString),
-				guess.changeText(constructRandomString(),empty = (True if cnt == 0 else False)),
-				run_time = t
+			anims.append(
+				Succession(
+					Wait(cumTimes[cnt]), 
+					AnimationGroup(
+						key.changeText(actString),
+						guess.changeText(constructRandomString()),
+						run_time = t
+					)
+				)
 			)
 			cnt += 1
-			
+
+		# fast forward
+
+		for big in range(2):
+			for _ in range(invMinTime):
+				actString = '{0:03b}'.format(big) + "..."
+				for _ in range(5):
+					actString += random.choice(["0", "1"])
+				anims.append(
+					Succession(
+						Wait(cumTimes[cnt]), 
+						AnimationGroup(
+							key.changeText(actString),
+							guess.changeText(constructRandomString()),
+							run_time = minTime
+						)
+					)
+				)
+
+				cnt += 1
+
+
 		# we found the correct key
 
-		self.play(
-			key.changeText(ourKeyString),
-			guess.changeText(strCipherText)
+		anims.append(
+			Succession(
+				Wait(cumTimes[cnt]),
+				AnimationGroup(
+					key.changeText(ourKeyString),
+					guess.changeText(strCipherText),
+					run_time = minTime
+				)
+			)
 		)
 
+		self.play(
+			*anims
+		)
+
+		self.play(
+			Circumscribe(guess.border),
+			Circumscribe(cipher.border)
+		)
 
 		self.wait()
 
@@ -804,6 +924,8 @@ class TripleDes(Scene):
 		enough so that bruteforce is not a possibility, because 2^112 is 10^30,
 		which is just way too much. 
 		"""
+
+		upshift = 1
 
 		# beginning of the scene
 		self.next_section(skip_animations=False)
@@ -845,7 +967,6 @@ class TripleDes(Scene):
 			Key(
 				str, 
 				position = pos.copy(), 
-				upShift=1*UP
 			) for (pos, str) in zip(keyPositions, keyStrings)
 		]
 
@@ -861,8 +982,7 @@ class TripleDes(Scene):
 		topKeys = [
 			Key(
 				str, 
-				position = pos.copy(), 
-				upShift=1*UP
+				position = pos.copy()
 			) for (pos, str) in zip(keyPositions, keyStrings)
 		]
 		self.play(*[key.createRectangleKey(noBrace=True) for key in topKeys], run_time = 0.01)
@@ -894,8 +1014,6 @@ class TripleDes(Scene):
 
 		#triple des -> double des
 
-		self.next_section(skip_animations=False)
-
 		DoubleDes = Tex(r"Double DES", color = textColor).move_to(DesTextPosition)
 
 		txtShift = ciphers[1].border.get_center()[0]*RIGHT
@@ -905,8 +1023,6 @@ class TripleDes(Scene):
 		newKeys = [[key.border.copy().shift(recShift), key.text.copy().shift(recShift)] for key in topKeys]
 		newKeys[2][0].color = RED # TODO ?
 		newKeys[2][1].color = RED
-
-
 
 		newTitle = Tex(r"112 bits", color = textColor).move_to(topKeys[1].title.get_center())
 		newBrace = Brace(Group(newKeys[0][1], newKeys[1][1]), UP, color = textColor).move_to(topKeys[1].brace)
@@ -925,7 +1041,7 @@ class TripleDes(Scene):
 		)
 
 
-		# TODO
+		# TODO udelat hezky
 		self.play(
 			FadeOut(ciphers[2].border), *[FadeOut(txt) for txt in ciphers[2].lines], 
 			FadeOut(topKeys[2].border), FadeOut(topKeys[2].text),
@@ -933,17 +1049,72 @@ class TripleDes(Scene):
 		)
 
 
-		computation = Tex(
-			r"$2^{112} \approx 10^{34}$",
-			color = textColor
-		).move_to(4*RIGHT + 2*UP)
+		# highlight arrows
 
+		self.remove(
+			keys[0].redArrow,
+			keys[1].redArrow
+		)
 		self.play(
-			Write(computation)
+			keys[0].createRedArrow()
+		)
+		self.play(
+			keys[1].createRedArrow()
 		)
 
-		self.wait()
+		# write down the calculation
 
+		# txt = Group(
+		# 	Tex(
+		# 		r"$2 \cdot 56 = 112$ bits",
+		# 		color = textColor
+		# 	),
+		txt = Tex(
+			r"$2^{112} \approx 10^{34}$",
+			color = textColor
+		).move_to(5*RIGHT + 2*UP)
+		
+		# self.play(
+		# 	Write(txt)
+		# ) 
+
+		# move to the middle
+
+		self.play(
+			Unwrite(txt),
+			topKeys[0].removeRec(noBrace=True),
+			topKeys[1].removeRec(),
+			keys[0].changeTextandSize(zeroString, shift = midDiagramPos - bottomDiagramPos + 0.5 * LEFT),
+			keys[1].changeTextandSize(zeroString, shift = midDiagramPos - bottomDiagramPos + 0.5 * RIGHT),
+			plain.shift(midDiagramPos - bottomDiagramPos + 1 * LEFT),
+			ciphers[0].shift(midDiagramPos - bottomDiagramPos),
+			ciphers[1].shift(midDiagramPos - bottomDiagramPos + 1 * RIGHT),			
+		)
+
+
+		# bruteforce animation
+		self.next_section(skip_animations=False)
+
+		for i in range(1):
+			for big in range(4):
+				for _ in range(invMinTime):
+					actString = '{0:03b}'.format(big) + "..."
+					for _ in range(5):
+						actString += random.choice(["0", "1"])
+					self.play(
+						keys[1].changeText(actString),
+						ciphers[1].changeText(constructRandomString()),
+						run_time = minTime/2
+					)
+					self.wait(minTime/2)
+			self.play(
+				keys[0].changeText("000..." + '{0:05b}'.format(i+1)),
+				ciphers[0].changeText(constructRandomString()),
+				run_time = 0.01
+			)
+
+
+		self.wait()
 
 class DesMITM(Scene):
 	def construct(self):
@@ -1186,8 +1357,7 @@ class DesMITM(Scene):
 
 		self.wait()
 
-
-class GeneralMITM(Scene):
+class GeneralMITM(ThreeDScene):
 	def construct(self):
 		"""
 		TODO: Srovnání MITM na kostce a na DES. Co je společného. Nalevo kostka,
@@ -1198,8 +1368,203 @@ class GeneralMITM(Scene):
 
 		Nakonec někde ukázat zobecnění, že potřebujeme sice jen sqrt(n) času,
 		ale zato sqrt(n) paměti místo O(1).
+
+		So again, we are going from both sides and we meet in the middle.
+		This trick is analogous to the cube graph of size 10^20 that is too large 
+		to be fully explored, but clever application of the meet in the middle trick 
+		allowed us to find the best solution that needed around 10^10 steps and around 
+		the same number of bytes of memory. 
+
 		"""
-		pass
+		self.camera.set_focal_distance(20000.0)
+		self.camera.should_apply_shading = False
+
+		# first split screen
+		self.next_section(skip_animations=False)
+
+		eps = 0.01
+		backgroundRect = Rectangle(
+			height = 8 + eps,
+			width = 14.2 + eps,
+			fill_opacity = 1,
+			fill_color = BASE02,
+			color = BASE02, 	
+		)
+		#backgroundRect.z_index = -1
+		
+		backgroundRect.generate_target()
+		backgroundRect.target.move_to(
+			(14.2+2*eps)*RIGHT/2
+		)
+
+		self.play(
+			MoveToTarget(backgroundRect),
+			run_time = 1	
+		)
+
+		halfScreen = 14.2 / 2
+
+		# rubik objects
+		
+		shft = 2 * UP
+		cube = RubiksCube(cubie_size=0.7).move_to(
+			shft + halfScreen/2 * LEFT
+		)
+
+		# text objects
+		cubeTexts = [
+			[
+				Tex(str, color = textColor)
+				for str in strList
+			]
+			for strList in [
+				[r"$10^{20}$", r"$n$", r" configurations"],
+				[r"{\it Meet in the Middle} solution:"], # TODO
+				[r"$10^{10}$", r"$\sqrt{n}$", r" work"],
+				[r"$10^{10}$", r"$\sqrt{n}$", r" memory"],
+				[r"$n = 10^{20}$"]
+			]
+		]
+		desTexts = [
+			[
+				Tex(str, color = textColor)
+				for str in strList
+			]
+			for strList in [
+				[r"$2^{112}$", r"$n$", r" possibilities"],
+				[r"{\it Meet in the Middle} solution:"], 
+				[r"$2^{56}$", r"$\sqrt{n}$", r" work"],
+				[r"$2^{56}$", r"$\sqrt{n}$", r" memory"], 
+				[r"$n = 2^{112}$"]
+			]
+		]
+
+		for Texts, pos in zip([cubeTexts, desTexts], [halfScreen*LEFT/2, halfScreen*RIGHT/2]):
+			Group(
+				Group(Texts[0][0], Texts[0][2]).arrange(RIGHT),
+				Texts[1][0],
+				Group(Texts[2][0], Texts[2][2]).arrange(RIGHT),
+				Group(Texts[3][0], Texts[3][2]).arrange(RIGHT),
+				Texts[4][0]
+			).arrange(DOWN).move_to(pos + 2*DOWN)
+
+		
+			for txtList in Texts[0:1] + Texts[2:4]:
+				txtList[2].shift((txtList[2].get_bottom() - txtList[0].get_bottom())[1] * 2 * DOWN)
+				txtList[1].move_to(txtList[0].get_center()).align_to(txtList[0], RIGHT)
+				
+
+
+		#cube animations
+
+
+
+		self.play(FadeIn(cube))
+		self.play(Rotate(cube, 2 * PI, UP), run_time=1)
+		
+		for Texts in [cubeTexts]:
+			self.play(AnimationGroup(
+					Write(Texts[0][0]),
+					Write(Texts[0][2])
+			))
+			self.play(Write(Texts[1][0]))
+			self.play(AnimationGroup(
+				Write(Texts[2][0]),
+				Write(Texts[2][2])
+			))
+			self.play(AnimationGroup(
+				Write(Texts[3][0]),
+				Write(Texts[3][2])
+			))
+
+		# des animations
+
+
+		dist = 3
+		sc = 1
+
+		plain = Btext(
+			strPlainText, 
+			position = midDiagramPos + shft + halfScreen/2 * RIGHT - halfScreen/3 * RIGHT,
+			scale = sc,
+		)
+
+		inter = Btext(
+			constructRandomString(),  
+			position = midDiagramPos + shft + halfScreen/2 * RIGHT,
+			scale = sc,
+			width = plain.width,
+			height = plain.height
+		)
+
+		cipher = Btext(
+			constructRandomString(), 
+			position = midDiagramPos + shft + halfScreen/2 * RIGHT + halfScreen/3 * RIGHT,
+			scale = sc,
+			width = plain.width,
+			height = plain.height
+		)
+
+		len = 1.2
+		key1 = Arrow(
+			start = (len / 2.0) * LEFT,
+			end = (len / 2.0) * RIGHT ,
+			color = encodeColor,
+			stroke_width = 8			
+		).move_to((plain.position + inter.position)/2)
+
+
+		key2 = Arrow(
+			start = (len / 2.0) * LEFT,
+			end = (len / 2.0) * RIGHT,
+			color = encodeColor,
+			stroke_width = 8
+		).move_to((cipher.position + inter.position)/2)
+
+		self.play(
+			plain.create(),
+			inter.create(),
+			cipher.create(),
+			Create(key1),
+			Create(key2),
+		)
+
+		#des text
+
+		for Texts in [desTexts]:
+			self.play(AnimationGroup(
+					Write(Texts[0][0]),
+					Write(Texts[0][2])
+			))
+			self.play(Write(Texts[1][0]))
+			self.play(AnimationGroup(
+				Write(Texts[2][0]),
+				Write(Texts[2][2])
+			))
+			self.play(AnimationGroup(
+				Write(Texts[3][0]),
+				Write(Texts[3][2])
+			))
+
+		# change numbers to n
+
+		self.play(
+			*[
+				Write(Texts[4][0])
+				for Texts in [desTexts, cubeTexts]
+			]	
+		)
+
+
+		self.play(
+			*[
+				Transform(strList[0], strList[1])
+				for strList in desTexts[0:1] + desTexts[2:4] + cubeTexts[0:1] + cubeTexts[2:4]
+			]
+		)
+
+		self.wait()
+
 
 
 def constructTextBorder(insideObject = None, position = np.array([0, 0, 0]), width = None, height = None, color = borderColor, fill_color = None, fill_opacity = 0.0):
