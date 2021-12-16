@@ -13,6 +13,10 @@ import util
 
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
+#https://colorswall.com/palette/171
+# TODO vyrenderovat s těmahle barvama aspoň jednu kostku někde
+# cube.DEFAULT_CUBE_COLORS = ["#ffffff", "#b71234", "#009b48", "#ffd500", "#ff5800", "#0046ad"]
+
 
 class Logo(ThreeDScene):
     def construct(self):
@@ -56,16 +60,19 @@ class ChannelIntro(ThreeDScene):
 
         buffer = 0.7
 
+        hlasek = Tex(r"\textbf{Filip Hlásek}: code", color=text_color).shift(
+            0 * DOWN * buffer
+        )
         rozhon = Tex(
-            r"\textbf{Václav Rozhoň}: script writer, animation", color=text_color
+            r"\textbf{Václav Rozhoň}: script, animation", color=text_color
+        ).shift(
+            DOWN * buffer
         )
         volhejn = Tex(
-            r"\textbf{Václav Volhejn}: voice, animation, script editor",
+            r"\textbf{Václav Volhejn}: voice, script, animation",
             color=text_color,
-        ).shift(DOWN * buffer)
-        hlasek = Tex(r"\textbf{Filip Hlásek}: code", color=text_color).shift(
-            2 * DOWN * buffer
-        )
+        ).shift(2 * DOWN * buffer)
+
 
         names = Group(rozhon, volhejn, hlasek)
         names.shift(2 * DOWN + LEFT)
