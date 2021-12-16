@@ -104,7 +104,7 @@ def generate_path_animations(center, angle, base_radius, radius_step, n_steps):
     return points, animations
 
 
-class BFSOneSide(ThreeDScene):
+class BFSOneSide(util.RubikScene):
     def construct(self):
         """
         animace kde je nalevo scrambled kostka, napravo složená, přidáváme
@@ -114,10 +114,12 @@ class BFSOneSide(ThreeDScene):
         Ztratí se všechny slupky, ukážeme je kolem složené (do vzdálenosti 10).
 
         Ukázat slupky z obou stran, musí se protínat
-        """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
 
+        TODO: kdyby se neprotinaly: dat kostky dal od sebe, ukazat "pravitko"
+        co ukaze ze vzdalenost je '>20'
+
+        TODO: akordiky na fadeout/překryv?
+        """
         base_radius = 0.9
         radius_step = 0.3
         n_steps = 20
@@ -147,23 +149,32 @@ class BFSOneSide(ThreeDScene):
 
         if True:
             for i, anims in enumerate(circle_anims_from):
-                self.play(*anims, run_time=2 / (i + 2))
+                run_time = 2 / (i + 2)
+                self.play_bfs_sound(animation_run_time=run_time)
+                self.play(*anims, run_time=run_time)
 
             self.wait()
 
             # Ztratí se slupky až na prvních 10, ty tu kostku neobsahují.
             label2 = MathTex(str(n_steps_small), color=RED)
 
+            for i in reversed(range(n_steps_small, n_steps)):
+                self.bfs_counter = i
+                self.play_bfs_sound(
+                    # time_offset=util.inverse_smooth(1 - (i - n_steps_small) / (n_steps - n_steps_small))
+                    time_offset=(1 - (i - n_steps_small) / (n_steps - n_steps_small))
+                )
+
             self.play(
                 *[
                     FadeOut(circle)
-                    for circle in circle_anims_from.circles[n_steps_small-1:-1]
+                    for circle in circle_anims_from.circles[n_steps_small - 1 : -1]
                 ],
                 # FadeOut(circle_anims_from.label),
                 circle_anims_from.circle.animate.scale_to_fit_height(
                     circle_anims_from.circles[n_steps_small - 1].height
                 ),
-                circle_anims_from.label.animate.become(label2)
+                circle_anims_from.label.animate.become(label2),
             )
 
             self.wait()
@@ -173,7 +184,9 @@ class BFSOneSide(ThreeDScene):
                 *[
                     FadeOut(circle)
                     for circle in circle_anims_from.circles[:n_steps_small]
-                ]
+                ],
+                FadeOut(circle_anims_from.label),
+                FadeOut(circle_anims_from.circle),
             )
 
         circle_anims_to = BFSCircleAnimations(
@@ -184,7 +197,10 @@ class BFSOneSide(ThreeDScene):
             radius_step=radius_step,
         )
 
+        self.bfs_counter = 0
+
         for i, anims in enumerate(circle_anims_to):
+            self.play_bfs_sound(animation_run_time=run_time)
             self.play(*anims, run_time=0.1)
 
         self.wait()
@@ -213,7 +229,7 @@ class BFSOneSide(ThreeDScene):
         # self.play(*[FadeOut(mob) for mob in self.mobjects])
 
 
-class CubeMITM(ThreeDScene):
+class CubeMITM(util.RubikScene):
     def construct(self):
         """
         Meet in the middle.
@@ -226,9 +242,6 @@ class CubeMITM(ThreeDScene):
         the scrambled cube and from the solved one. Then we simply connect these
         two partial paths to get the best solution.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         base_radius = 0.9
         radius_step = 0.3
         n_steps = 9
@@ -263,7 +276,9 @@ class CubeMITM(ThreeDScene):
         )
 
         for anims_from, anims_to in zip(circle_anims_from, circle_anims_to):
+            self.play_bfs_sound(animation_run_time=1/3)
             self.play(*anims_from, run_time=1 / 3)
+            self.play_bfs_sound(animation_run_time=1/3)
             self.play(*anims_to, run_time=1 / 3)
 
         self.wait()
@@ -302,28 +317,3 @@ class CubeMITM(ThreeDScene):
             #     break
 
         self.play(cube_from.animate.shift(ORIGIN), run_time=2)
-
-
-class MemoryIssues(ThreeDScene):
-    def construct(self):
-        """
-        TODO: vymyslet animaci k tomuhle. Je nějaká potřeba?
-
-        So in terms of time, we’re in the clear. But another issue arises if we
-        try to actually implement this idea: memory. Storing 10^10 cube
-        configurations would require about 80 GB, a bit too much for our poor
-        laptops. This means that we need to use some additional trickery to make
-        the code work. But it can be done - if you’re curious, check out the
-        code linked in the video description. We also include a bit about the
-        state-of-the-art solving algorithms. Those algorithms also use the meet
-        in the middle idea, but they also exploit some more specific properties
-        of the cube graph, which allows them to be much faster than our simple
-        meet in the middle search.
-
-        TODO: chceme tohle?
-        The only property of the cube graph that we exploited is that the number
-        of explored nodes grows very rapidly. Graphs with this property are more
-        common than you think, not just rubik’s cube graph and friendship
-        networks. Again, more in the video description!
-        """
-        pass

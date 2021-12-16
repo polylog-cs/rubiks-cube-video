@@ -97,7 +97,7 @@ class ChannelIntro(ThreeDScene):
         self.wait(1)
 
 
-class MoveDefinition(ThreeDScene):
+class MoveDefinition(util.RubikScene):
     def construct(self):
         """
         Co počítáme jako jeden move?
@@ -108,9 +108,6 @@ class MoveDefinition(ThreeDScene):
         top and bottom, the left and right, and the front and back. Each can be
         rotated to three new positions, hence 18 total possibilities.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         faces = "UDLRFB"
         positions = []
 
@@ -174,15 +171,13 @@ class MoveDefinition(ThreeDScene):
         self.wait(2)
 
 
-class FeliksVsOptimal(ThreeDScene):
+class FeliksVsOptimal(util.RubikScene):
     def construct(self):
         """
         For example, with this definition the position that Mr. Zemdegs solved
         can be solved in 18 moves, although Mr. Zemdegs’s solution was of course
         different and used 44 moves.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
 
         cube_distance = 7
 
@@ -254,7 +249,7 @@ class FeliksVsOptimal(ThreeDScene):
         self.wait()
 
 
-class CubeGraph(ThreeDScene):
+class CubeGraph(util.RubikScene):
     def construct(self):
         """
         TODO: ukázat co myslíme grafem kostky v tomto případě. Ukázat malou část
@@ -281,9 +276,6 @@ class CubeGraph(ThreeDScene):
         of their distance to that configuration. We are searching until we
         encounter the solved configuration.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         # TODO: najit zajimavejsi graf, ve kterem existuji dve cesty (dve reseni)
         # ktere se netrivialne lisi a jedna je rychlejsi.
         vertices = [

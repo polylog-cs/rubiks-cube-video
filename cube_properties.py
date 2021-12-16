@@ -19,14 +19,15 @@ except ImportError:
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
-class Neighborhood(ThreeDScene):
+class Neighborhood(util.RubikScene):
     def construct(self):
         """
         Ukázat graf stavů ze do hloubky 1, pak 2.
-        """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
 
+        TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je
+        TODO: v druhe fazi jdou cary pres kostky
+        TODO: zvuk - stoupající akordy na rhodes?
+        """
         self.next_section("First layer", skip_animations=True)
 
         edges = set()
@@ -192,7 +193,7 @@ class Neighborhood(ThreeDScene):
         self.wait()
 
 
-class BFSTest(ThreeDScene):
+class BFSTest(util.RubikScene):
     def construct(self):
         """
         Ukázka BFS z jednoho vrcholu, pro testování
@@ -245,7 +246,7 @@ class BFSTest(ThreeDScene):
         self.wait()
 
 
-class NeighborCount(ThreeDScene):
+class NeighborCount(util.RubikScene):
     def construct(self):
         """
         Čísla s počtem vrcholů do vzdálenosti n, pro n = 1, 2, 3. Pak
@@ -271,9 +272,6 @@ class NeighborCount(ThreeDScene):
         nodes seen will be around 10^5. Again, it’s actually about 6 times
         larger, but close enough.
         """
-        self.camera.set_focal_distance(20000.0)
-        self.camera.should_apply_shading = False
-
         self.next_section("Table", skip_animations=False)
 
         table_group = Group()
@@ -406,6 +404,13 @@ class NeighborCount(ThreeDScene):
                             edge = graph.edges[(((i, j), cur))]
                             anims[edge_distance + 1].append(edge.animate.set_color(RED))
 
+        run_time = 0.25
+        lag_ratio = 0.9
+
+        for it in range(len(anims)):
+            offset = run_time * lag_ratio * (it + 0.5)
+            self.add_sound(f"audio/bfs/bfs_{it:03d}", time_offset=offset)
+
         self.play(
             LaggedStart(
                 *[AnimationGroup(*anims_step, run_time=0.25) for anims_step in anims],
@@ -418,7 +423,7 @@ class NeighborCount(ThreeDScene):
         values_manhattan = [
             [Tex(r"\textbf{Steps}", color=GRAY), Tex(r"\textbf{Explored}", color=GRAY)],
             [MathTex("5", color=GRAY), MathTex("61", color=GRAY)],
-            [MathTex("n", color=RED), MathTex("\sim n^2", color=RED)],
+            [MathTex("n", color=RED), MathTex("\sim 2n^2", color=RED)],
         ]
         table_manhattan = Group(*[cell for row in values_manhattan for cell in row])
         table_manhattan.arrange_in_grid(
@@ -471,7 +476,7 @@ def bfs(adj, start):
     return res_vertices, res_edges
 
 
-class FriendshipGraph(Scene):
+class FriendshipGraph(util.RubikScene):
     def construct(self):
         """
         For example, you may have heard about the six degrees of separation
@@ -483,6 +488,11 @@ class FriendshipGraph(Scene):
         Again, this is because, intuitively, the number of people reached is
         always multiplied by something like 50-100 in every step, since the
         average person has around 100 friends.
+
+        TODO: po BFS zvyraznit cestu mezi excited typkem a Feliksem,
+        pak nechat zmizet zbytek grafu, ukazat jen "rovnou" cestu.
+        Pak Feliks zmizi a misto nej bude Grant Sanderson, s tim
+        ze se taky zvysi pocet intermediaries.
         """
         N = 50
 
@@ -490,6 +500,7 @@ class FriendshipGraph(Scene):
         max_steps = 3
 
         random.seed(4)
+        attempts = 0
 
         while True:
             g = dict([(i, []) for i in range(N)])
@@ -499,7 +510,7 @@ class FriendshipGraph(Scene):
             for i in range(N):
                 vertices.append(i)
                 # the distribution of k defines the graph's density
-                k = random.randrange(2, 4)
+                k = random.randrange(2, 5)
                 adj = set(random.choices(range(N), k=k))
 
                 try:
@@ -516,9 +527,13 @@ class FriendshipGraph(Scene):
             bfs_vertices, bfs_edges = bfs(g, 0)
             bfs_vertices.append([])
 
-            print("Actual steps:", len(bfs_vertices) - 2)
-            if len(bfs_vertices) <= max_steps + 2:
+            # print("Actual steps:", len(bfs_vertices) - 2)
+            if len(bfs_vertices) <= max_steps + 2 and len(g[0]) <= 3:
                 break
+
+            attempts += 1
+            if attempts % 100 == 0:
+                print(f"{attempts} unsuccessful attempts")
 
         ganim = Graph(
             vertices,
@@ -530,7 +545,7 @@ class FriendshipGraph(Scene):
         )
 
         ganim.scale_to_fit_height(6.5)
-        ganim.move_to(RIGHT*2)
+        ganim.move_to(RIGHT * 2)
 
         text_scale = 1.8
         steps_tex = (
@@ -550,9 +565,9 @@ class FriendshipGraph(Scene):
         self.play(guy.animate.move_to(ganim.vertices[0].get_center()).scale(0.2))
         self.wait()
         self.play(
-            ganim.animate.shift(RIGHT*2),
-            guy.animate.shift(RIGHT*2),
-            FadeIn(steps_tex)
+            ganim.animate.shift(RIGHT * 2),
+            guy.animate.shift(RIGHT * 2),
+            FadeIn(steps_tex),
         )
         self.wait()
 
@@ -592,8 +607,7 @@ class FriendshipGraph(Scene):
             for e in l_edges:
                 swapped = False
                 if e not in ganim.edges:
-                    i, j = e
-                    e = j, i
+                    e = e[1], e[0]
                     swapped = True
 
                 edge = ganim.edges[e]
@@ -604,6 +618,8 @@ class FriendshipGraph(Scene):
 
                 anims.append(Create(Line(start, end, color=highlight_color)))
 
+            if i > 0:
+                self.play_bfs_sound(time_offset=0.2)
             self.play(*anims)
 
         self.wait()
