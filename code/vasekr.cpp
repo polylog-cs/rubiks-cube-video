@@ -174,13 +174,13 @@ void explore_states(
 
     ++cnt;
 
-    // if(depth == 6){ // some pruning at level 6
-    //     pair<ull, ull> comp_state = compress_state(state);
-    //     if(states6.count(comp_state) && states6[comp_state] <= depth){
-    //         return; //we already visited this state
-    //     }
-    //     states6[comp_state] = depth;
-    // } 
+    if(depth == 6){ // some pruning at level 6
+        pair<ull, ull> comp_state = compress_state(state);
+        if(states6.count(comp_state) && states6[comp_state] <= depth){
+            return; //we already visited this state
+        }
+        states6[comp_state] = depth;
+    } 
 
     // if(depth == 7){ // some pruning at level 7
     //     pair<ull, ull> comp_state = compress_state(state);
