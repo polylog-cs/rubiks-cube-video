@@ -1,8 +1,5 @@
 /* Written by Filip Hlasek 2021 */
 
-// asi to není bloom filter
-
-
 #include <cassert>
 #include <cstdio>
 #include <algorithm>
@@ -85,11 +82,11 @@ inline pair<ull, ull> compress_state(string& state){
     ull fst = 0;
     ull snd = 0;
     for(int i = 0; i < 24; ++i){ // log_2(6^24) = 62.1
-        fst += state[i] - 'F';
+        fst += state[i] - 'A';
         fst *= 6;
     }
     for(int i = 0; i < 24; ++i){
-        snd += state[24+i] - 'F';
+        snd += state[24+i] - 'A';
         snd *= 6;
     }
     return {fst, snd};
@@ -174,21 +171,21 @@ void explore_states(
 
     ++cnt;
 
-    if(depth == 6){ // some pruning at level 6
-        pair<ull, ull> comp_state = compress_state(state);
-        if(states6.count(comp_state) && states6[comp_state] <= depth){
-            return; //we already visited this state
-        }
-        states6[comp_state] = depth;
-    } 
-
-    // if(depth == 7){ // some pruning at level 7
+    // if(depth == 6){ // some pruning at level 6
     //     pair<ull, ull> comp_state = compress_state(state);
-    //     if(states7.count(comp_state) && states7[comp_state] <= depth){
+    //     if(states6.count(comp_state) && states6[comp_state] <= depth){
     //         return; //we already visited this state
     //     }
-    //     states7[comp_state] = depth;
+    //     states6[comp_state] = depth;
     // } 
+
+    if(depth == 7){ // some pruning at level 7
+        pair<ull, ull> comp_state = compress_state(state);
+        if(states7.count(comp_state) && states7[comp_state] <= depth){
+            return; //we already visited this state
+        }
+        states7[comp_state] = depth;
+    } 
 
     // if(depth == max_depth){
     //     long long h = hash_state(state);
