@@ -222,10 +222,6 @@ class FeliksVsOptimal(util.RubikScene):
         for cube in [cube_best, cube_actual]:
             util.scramble_to_feliks(cube)
 
-            # TODO: tady ty kostky otacim, aby to bylo z Feliksova pohledu, tj. nejvic
-            # se pouziva R a U. Zamichany stav kostky ale pak vypada jinak nez v ostatnich
-            # castech, kde kostka otocena neni. Vadi nam to?
-
             # Rotate to get Feliks' POV
             cube.rotate(PI / 2, RIGHT)
             cube.rotate(PI / 2, UP)
