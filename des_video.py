@@ -884,7 +884,7 @@ class DesIntro(Scene):
 class DesBruteForce(Scene):
 	def construct(self):
 		"""
-		TODO: Animace, kde je vstupní text (něco vtipného), pak šipky nad
+		: Animace, kde je vstupní text (něco vtipného), pak šipky nad
 		kterými jsou klíče a jde to do cipher textů. Klíč je buď klipart nebo
 		občas string bitů. Napravo je cipher text a checkujeme (posouváme ho?)
 		zda matchuje naše CipherTexty
@@ -944,7 +944,7 @@ class DesBruteForce(Scene):
 
 		# first go one by one
 		waitingTimes = [] 
-		L = 10 # TODO víc 
+		L = 10 # víc 
 		for i in range(L):
 			waitingTimes.append(
 				max((1.0 - (i * 1.0 / L)), minTime)
@@ -1042,7 +1042,7 @@ class DesBruteForce(Scene):
 class TripleDes(Scene):
 	def construct(self):
 		"""
-		TODO: animace k tomuhle:
+		: animace k tomuhle:
 		To fix this issue, people came up with a new cipher known as Triple DES,
 		which is just the old DES but applied three times in a row with three
 		different keys of combined length of 3*56 = 168 bits. But you may ask,
@@ -1163,7 +1163,7 @@ class TripleDes(Scene):
 
 
 		newKeys = [[key.border.copy().shift(recShift), key.text.copy().shift(recShift)] for key in topKeys]
-		newKeys[2][0].color = RED # TODO ?
+		newKeys[2][0].color = RED 
 		newKeys[2][1].color = RED
 
 		newTitle = Tex(r"112 bits", color = textColor).move_to(topKeys[1].title.get_center())
@@ -1371,7 +1371,7 @@ class DesMITM(Scene):
 
 		anims = []
 		for it, (pos, keyString) in enumerate(zip(databasePositions, keyStrings)):
-			curInter = Btext( # TODO fix visibility of the text
+			curInter = Btext( 
 				#strPlainText,
 				constructRandomString(),
 				position = posInter, 
@@ -1630,7 +1630,7 @@ class DesMITM(Scene):
 class GeneralMITM(ThreeDScene):
 	def construct(self):
 		"""
-		TODO: Srovnání MITM na kostce a na DES. Co je společného. Nalevo kostka,
+		 Srovnání MITM na kostce a na DES. Co je společného. Nalevo kostka,
 		napravo nějak vizualizovaný DES. Pak v "tabulce" ukázat čísla
 		srovnávající runtime bruteforcu vs MITM.
 
@@ -1689,7 +1689,7 @@ class GeneralMITM(ThreeDScene):
 			]
 			for strList in [
 				[r"$10^{20}$", r"$n$", r" configurations"],
-				[r"{\it Meet in the Middle} solution:"], # TODO
+				[r"{\it Meet in the Middle} solution:"], 
 				[r"$10^{10}$", r"$\sqrt{n}$", r" work"],
 				[r"$10^{10}$", r"$\sqrt{n}$", r" memory"],
 				[r"$n = 10^{20}$"]
