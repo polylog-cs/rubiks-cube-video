@@ -11,11 +11,42 @@ class RubikScene(ThreeDScene):
 
     def play_bfs_sound(self, time_offset=0, animation_run_time=None):
         if animation_run_time is not None:
-            assert time_offset == 0, "Nelze nastavit jak time_offset tak animation_length"
-            time_offset = max(0, min(animation_run_time - 0.2, animation_run_time * 0.5))
+            assert (
+                time_offset == 0
+            ), "Nelze nastavit jak time_offset tak animation_length"
+            time_offset = max(
+                0, min(animation_run_time - 0.2, animation_run_time * 0.5)
+            )
 
         self.add_sound(f"audio/bfs/bfs_{self.bfs_counter:03d}", time_offset=time_offset)
         self.bfs_counter += 1
+
+
+def bfs(adj, start):
+    res_vertices = [[start]]
+    res_edges = [[]]
+    seen = set([start])
+
+    while True:
+        cur_vertices = []
+        cur_edges = []
+
+        for v1 in res_vertices[-1]:
+            for v2 in adj[v1]:
+                cur_edges.append((v1, v2))
+
+                if v2 not in seen:
+                    cur_vertices.append(v2)
+                    seen.add(v2)
+
+        if cur_vertices:
+            res_vertices.append(cur_vertices)
+            res_edges.append(cur_edges)
+        else:
+            res_edges.append(cur_edges)
+            break
+
+    return res_vertices, res_edges
 
 
 # https://ruwix.com/blog/feliks-zemdegs-rubiks-world-record-2016-4-73/

@@ -227,8 +227,8 @@ class FeliksVsOptimal(util.RubikScene):
             cube.rotate(PI / 2, UP)
 
             # "rotate nicely"
-            cube.rotate(15 * DEGREES, axis=np.array([1, 0, 0]))
-            cube.rotate(15 * DEGREES, axis=np.array([0, 1, 0]))
+            cube.rotate(-20 * DEGREES, axis=np.array([0, 1, 0]))
+            cube.rotate(20 * DEGREES, axis=np.array([1, 0, 0]))
 
         self.add(cube_best, cube_actual)
         self.wait()
@@ -250,79 +250,6 @@ class FeliksVsOptimal(util.RubikScene):
         self.wait()
         self.play(FadeIn(Tex("cube20.org", color=GRAY)))
         self.wait()
-
-
-class CubeGraph(util.RubikScene):
-    def construct(self):
-        """
-        TODO: ukázat co myslíme grafem kostky v tomto případě. Ukázat malou část
-        grafu (nejspíš ani neukazovat všech 18 hran z vrcholu), každý vrchol
-        jedna kostka. Pak v něm vyznačit cestu z nějakého stavu do složeného,
-        nejspíš něco triviálního o délce 2.
-
-        In this case, the possible configurations of the cube form the nodes of
-        a vast network, with two nodes being connected if there is a move from
-        one configuration to the other. In computer science, we call such
-        networks graphs and the connections edges. Thinking in terms of graphs
-        is a common trick, since it can stand for a road network, or friendships
-        on a social network, or, in our case an abstract network of
-        configurations.
-
-        So let’s say we want to solve our cube with as few moves as possible. In
-        the language of graphs, this amounts to finding the shortest path from
-        the scrambled configuration to the solved one.
-
-        So how can we find the shortest path? The first solution that comes to
-        mind is to take the scrambled configuration and do what is also called
-        the breadth first search algorithm. Simply speaking, this algorithm
-        explores all possible configurations from the scrambled one in the order
-        of their distance to that configuration. We are searching until we
-        encounter the solved configuration.
-        """
-        # TODO: najit zajimavejsi graf, ve kterem existuji dve cesty (dve reseni)
-        # ktere se netrivialne lisi a jedna je rychlejsi.
-        vertices = [
-            1,  # solved
-            2,  # R
-            3,  # L2
-            4,  # L2 R
-            5,  # R U'
-        ]
-        edges = [(1, 2), (1, 3), (2, 4), (3, 4), (5, 2)]
-        g = Graph(
-            vertices,
-            edges,
-            vertex_type=RubiksCube,
-            vertex_config={
-                "cubie_size": 0.3,
-            },
-            edge_config={
-                "color": GRAY,
-                "shade_in_3d": True,  # Needed to keep the edges behind the cube
-            },
-            layout="kamada_kawai",
-        )
-        g[2].do_move("R")
-        g[3].do_move("L2")
-        g[4].do_move("L2").do_move("R")
-        g[5].do_move("R").do_move("U'")
-
-        # self.play(Create(g))
-        self.add(g)
-
-        self.wait()
-
-        self.play(
-            g[1].animate.move_to([1, 1, 0]),
-            g[2].animate.move_to([-1, 1, 0]),
-            g[3].animate.move_to([1, -1, 0]),
-            g[4].animate.move_to([-1, -1, 0]),
-        )
-        self.wait()
-
-        # TODO: zvyraznit nejkratsi cestu
-
-        # TODO: vizualizovat BFS (podobne jako v prvnim videu)
 
 
 class NumberOfStates(Scene):
