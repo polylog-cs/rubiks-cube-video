@@ -1,3 +1,4 @@
+from os import wait
 import string
 from manim import *
 from manim.utils import tex
@@ -10,7 +11,7 @@ from solarized import *
 # Use our fork of manim_rubikscube!
 from manim_rubikscube import *
 
-# Temne pozadi, ale zakomentovat pro intro a generalMITM !!!
+# Temne pozadi, ale zakomentovat pro DesIntro a GeneralMITM !!!
 config.background_color = BASE02
 
 
@@ -25,7 +26,7 @@ encodeColor = RED
 decodeColor = BLUE
 borderColor = GRAY
 smallFontSize = 20
-fontSize = 40 # TODO zmenit na vychozi velikost (jak se zjisti?)
+fontSize = 40 
 padding = 0.5 # between the text and the border around it
 
 
@@ -42,7 +43,7 @@ textPadding = 0.1
 keyInfoWidth = 3.0
 keyInfoHeight = 2.0
 leftTextPos = 5.5 * LEFT
-invMinTime = 8
+invMinTime = 6
 minTime = 1.0 / invMinTime
 
 posPlain = bottomDiagramPos + 6 * LEFT
@@ -77,7 +78,7 @@ def constructRandomString(lineLen = 8, numLines = 6):
 
 strPlainText = [
 	r"funny text",
-	r"shorter t",
+	r"funny text",
 	r"funny text",
 	r"funny text",
 	r"funny text",
@@ -114,6 +115,7 @@ class Btext:
 		self.strLines = strLines
 		self.fill_color = fill_color
 		self.fill_opacity = fill_opacity
+		self.tag = False
 
 		self.lines = Group(*[
 			Tex(
@@ -156,55 +158,104 @@ class Btext:
 			return AnimationGroup(*[Transform(line, newline) for (line, newline) in zip(self.lines, newLines)], lag_ratio = 0.2)
 		else:
 			self.lines = newLines
-			return AnimationGroup(*[Write(line) for line in self.lines], lag_ratio = 0.2)
+			return AnimationGroup(*[Write(line) for line in self.lines], lag_ratio = 0.2) 
 
-	def create(self, position = None, noText = False):
+	def create(self, position = None, noText = False, tag = False, tagStr = ""):
 		if position is not None:
-			self.position = position
+			self.position = position.copy()
 		
 		self.border.move_to(self.position)
-		self.lines.move_to(self.position + np.array([0, 0, 1]))
+		self.lines.move_to(self.position)
 		
+		anim = []
+
 		if noText == False:
-			anim = AnimationGroup(
-				*[Write(text) for text in self.lines],
-				lag_ratio = 0.2
+			anim.append(AnimationGroup(
+					*[Write(text) for text in self.lines],
+					lag_ratio = 0.2
+				)
 			)
-		else:
-			anim = AnimationGroup()
+
+		if tag == True:
+			self.tag = True
+			self.tagText = Tex(
+				tagStr,
+				color = textColor,
+				font_size = fontSize
+			).move_to(
+				self.border.get_center()
+			).next_to(self.border, DOWN)
+
+			anim.append(
+				Write(self.tagText)
+			)
 
 		return AnimationGroup(
-			Create(self.border),
-			anim, 
+
+			AnimationGroup(
+				Create(self.border),
+				run_time = 10
+			),
+
+			*anim, 
 		)
 
 	def highlight(self):
 		animl = [
-			self.border.animate().set_z_index(9999999)#.set_color(RED) # TODO zmenit
+			self.border.animate().set_z_index(9999999)
 		]
 		return AnimationGroup(
 			*animl
 		)
 
 	def move_to(self, position):
-		self.position = position
 		self.textBorder.generate_target()
-		self.textBorder.target.move_to(self.position)
-		return MoveToTarget(self.textBorder)
+		self.textBorder.target.move_to(position)
+
+
+		anims = [MoveToTarget(self.textBorder)]
+
+		if self.tag == True:
+			self.tagText.generate_target()
+			self.tagText.target.shift(position - self.position)
+			anims.append(
+				MoveToTarget(self.tagText)
+			)
+
+		self.position = position
+
+		return AnimationGroup(
+			*anims
+		) 
 
 	def shift(self, vec):
 		return self.move_to(self.position + vec)
 
 	def remove(self):
 		return AnimationGroup(
+			*[FadeOut(self.border)],
 			*[FadeOut(l) for l in self.lines],
-			*[FadeOut(self.border)]
 		)
 
+	def removeTag(self):
+		self.tag = False
+		return Unwrite(self.tagText)
+
+	def addTag(self, tagStr):
+		self.tag = True
+		self.tagText = Tex(
+			tagStr,
+			color = textColor,
+			font_size = fontSize
+		).move_to(
+			self.border.get_center()
+		).next_to(self.border, DOWN)
+
+		return Write(self.tagText)
 
 # key object
 class Key:
-	def __init__(self, keyString, position = np.array([0, 0, 0]), scale = 1.0, clipartWidth = keyWidthLarge, upShift = 0.5*UP):
+	def __init__(self, keyString, position = np.array([0, 0, 0]), scale = 1.0, clipartWidth = keyWidthLarge, upShift = 0.0*UP):
 		self.keyString = keyString
 		self.clipartWidth = clipartWidth
 		self.position = position
@@ -220,7 +271,6 @@ class Key:
 			height = self.text.get_top()[1] - self.text.get_bottom()[1] + padding, 
 			color = keyColor
 		).scale(scale)
-		#TODO maybe rotate rect
 
 		self.border.move_to(self.position)
 		
@@ -259,10 +309,11 @@ class Key:
 			color = decodeColor
 		)
 
-	def changeText(self, newKeyString):
+	def changeText(self, newKeyString, fst = False):
 		self.keyString = newKeyString
 		newText = Tex(self.keyString, color = textColor).move_to(self.text.get_center())
 		return Transform(self.text, newText)
+
 
 	def changeTextandSize(self, newKeyString, shift = 0):
 		self.keyString = newKeyString
@@ -299,10 +350,13 @@ class Key:
 		)
 
 	def createRectangleKey(self, position = None, noBrace = False):
-		if not position is None:
-			self.position = position
-		self.rectangleKey.move_to(self.position + self.upShift)
+		if position is None:
+			position = self.position.copy()
+
+		self.rectangleKey.move_to(position + self.rectangleKey.get_center() - self.border.get_center() )
 		
+		self.position = position
+
 		if noBrace  == False:
 			anims = AnimationGroup(
 				Write(self.text),
@@ -320,7 +374,7 @@ class Key:
 
 	def createClipartKey(self, position = None):
 		if not position is None:
-			self.position = position
+			self.position = position.copy()
 
 		self.border, self.clipartKeyLine, self.clipartKeyCirc = constructKey(
 			position = self.position,
@@ -350,7 +404,6 @@ class Key:
 			height = self.text.get_top()[1] - self.text.get_bottom()[1] + padding, 
 			color = keyColor
 		)
-		#TODO maybe rotate rect
 
 		newBorder.move_to(self.position + self.upShift)
 
@@ -551,18 +604,21 @@ class Key:
 			Uncreate(self.blueArrow)
 		)	
 
-	def remove(self):
+	def remove(self, noBrace = False):
 		anims = [
 			Uncreate(self.border),
-			Uncreate(self.brace),
-			Unwrite(self.title),
 			Unwrite(self.text),
 		]
+		if noBrace == False:
+			anims.append(Unwrite(self.title)),
+			anims.append(Uncreate(self.brace))
+
 		if self.redActive == True:
 			anims.append(Uncreate(self.redArrow))
 		if self.blueActive == True:
 			anims.append(Uncreate(self.blueArrow))
 		return AnimationGroup(*anims)
+
 
 class DesIntro(Scene):
 	def construct(self):
@@ -578,7 +634,8 @@ class DesIntro(Scene):
 		[Animace: Smysluplný enPlainText - červená šipka, nad ní klíč (číslo?) - enCipherText.
 		pod tím: enCipherText - modrá šipka, nad ní klíč - stejný enPlainText, plain text i enCipherText jsou stringy charů ne bitů]
 		'''
-		
+		topDiagramPos = 0.5 * UP
+
 		self.next_section(skip_animations=False)
 		
 		# DES -> Data Encryption Standard
@@ -589,48 +646,54 @@ class DesIntro(Scene):
 		DesTextLong.move_to(DesTextPosition)
 		DesTextShort = DesText.copy()
 
-		self.play(Write(DesText))
-		self.play(Transform(DesText, DesTextLong)) #TODO: vyhezkat, aby se písmenka DES jen posunula
+		# DesTextPosition2 = DesTextPosition + 1*DOWN
+		# delta = 0.35
+		# D = Tex(r"D", color = textColor).move_to(DesTextPosition2).shift(delta * LEFT)
+		# E = Tex(r"E", color = textColor).move_to(DesTextPosition2)
+		# S = Tex(r"S", color = textColor).move_to(DesTextPosition2).shift(delta * RIGHT)
+
+		# # first just letters
+
+		# self.play(
+		# 	Write(DesText),
+		# 	Write(D),
+		# 	Write(E),
+		# 	Write(S),
+		# )
+
+	
+		self.play(Transform(DesText, DesTextLong))
 		self.wait()
-		self.play(Transform(DesText, DesTextShort)) #TODO: vyhezkat, aby se písmenka DES jen posunula
+		self.play(Transform(DesText, DesTextShort))
 
 
-
+		
 
 		# first key occurence
 		key = Key(ourKeyString, clipartWidth = keyWidthLarge)
 
 
 		self.play(
-			key.createClipartKey(position = midDiagramPos)
+			key.createClipartKey(position = midDiagramPos.copy())
 		)
 
-		[self.play(anim) for anim in key.transformClipartToRectangle(position = midDiagramPos)]
-
-		[self.play(anim) for anim in key.transformRectangleToClipart(position = topDiagramPos)]
-
+		[self.play(anim) for anim in key.transformClipartToRectangle(position = midDiagramPos.copy())]
 
 		#encryption
 		enDescription = Tex(
 			"Encryption:", 
 			color = textColor, 
 			font_size = fontSize
-		).move_to(midDiagramPos + leftTextPos)
+		).move_to(midDiagramPos.copy() + leftTextPos.copy())
 		self.play(Write(enDescription))
 		self.wait()
 
 		#plain text
-		plain = Btext(strPlainText, position = midDiagramPos + diagramWidth/2 * LEFT)
-		self.play(plain.create())
+		plain = Btext(strPlainText, position = midDiagramPos.copy() + diagramWidth/2 * LEFT)
+		self.play(
+			plain.create(tag = True, tagStr = "plain text")
+		)
 		self.wait()
-
-		#key moves down
-		self.play(key.moveClipart(
-			position = midDiagramPos,
-			clipartWidth = keyWidth
-		))
-
-		self.next_section(skip_animations=False)
 
 		#add red arrow
 		self.play(key.createRedArrow())
@@ -640,24 +703,34 @@ class DesIntro(Scene):
 			strCipherText, 
 			width = plain.width, 
 			height = plain.height,
-			position = midDiagramPos - plain.position[0]*RIGHT
+			position = midDiagramPos.copy() - plain.position[0]*RIGHT
 		)
-
-		cipher.create()
-
-		# slide up
 
 		self.play(
-			key.moveClipart(position = key.position + topDiagramPos - midDiagramPos),
-			plain.move_to(position = plain.position + topDiagramPos - midDiagramPos),
-			cipher.move_to(position = cipher.position + topDiagramPos - midDiagramPos),
-			enDescription.animate().shift(topDiagramPos - midDiagramPos)
+			cipher.create(tag = True, tagStr = "cipher text")
 		)
+
+		# slide up
+		
+		self.play(
+			AnimationGroup(
+			plain.move_to( plain.position + topDiagramPos - midDiagramPos),
+			cipher.move_to(position = cipher.position + topDiagramPos - midDiagramPos),
+			key.moveRec(pos = key.position + topDiagramPos - midDiagramPos),
+			),
+			AnimationGroup(
+				enDescription.animate().shift(0.5 * UP)
+			)
+		)
+
+		self.play(
+			plain.removeTag(),
+			cipher.removeTag()
+		)
+
 		self.wait()
 
 		# copy to decrypt 
-
-		
 
 		decDescription = Tex(
 			"Decryption:", 
@@ -669,7 +742,13 @@ class DesIntro(Scene):
 		)
 		self.wait()
 
-		cipher2 = Btext(cipher.strLines, position = cipher.position) 
+		cipher2 = Btext(
+			cipher.strLines, 
+			position = cipher.position.copy(),
+			width = cipher.width,
+			height = cipher.height,
+		) 
+
 		self.play(
 			cipher2.create(),
 			run_time = 0
@@ -680,15 +759,24 @@ class DesIntro(Scene):
 		self.wait()
 
 
-		key2 = Key(key.keyString, position = key.position, clipartWidth = key.clipartWidth)
-		self.play(key2.createClipartKey(),  run_time = 0)
-		self.play(key2.moveClipart(
-			position = bottomDiagramPos,
+		key2 = Key(
+			key.keyString, 
+			position = key.position,
+		)
+		self.play(
+			key2.createRectangleKey(noBrace=True),
+			run_time = 0.01
+		)
+		self.play(key2.shiftRec(
+			bottomDiagramPos - topDiagramPos,
+			noBrace = True
 		))
+
+
 
 		self.play(key2.createBlueArrow())
 
-		plain2 = Btext(plain.strLines, position  = plain.position)
+		plain2 = Btext(plain.strLines, position  = plain.position.copy())
 		self.play(
 			plain2.create(),
 			run_time = 0
@@ -704,16 +792,11 @@ class DesIntro(Scene):
 
 		# explode keys
 
-		anim1 = key.transformClipartToRectangle(noBrace=True)
-		anim2 = key2.transformClipartToRectangle(noBrace=True)
-
-
-
-		for i in range(len(anim2)):
-			self.play(
-				anim1[i],
-				anim2[i]
-			)
+		# for i in range(len(anim2)):
+		# 	self.play(
+		# 		anim1[i],
+		# 		anim2[i]
+		# 	)
 
 
 		# try different key
@@ -740,8 +823,6 @@ class DesIntro(Scene):
 		# )
 
 
-		#BACK = np.array([0, 0, -1.0]) 
-		# TODO udělat to tak, aby to běželo vzadu ne vepředu
 
 		self.next_section(skip_animations=False)
 
@@ -771,12 +852,34 @@ class DesIntro(Scene):
 			#*[FadeOut(obj) for obj in everything],
 			run_time = 1	
 		)
-		
-		'''for obj in everything: 
-			obj.z_index = 1
-		backgroundRect.z_index = 0
-		self.wait(3)
-		'''
+
+		self.play(
+			Unwrite(decDescription),
+			Unwrite(enDescription),
+			plain2.remove(),
+			cipher2.remove(),
+			key2.remove(noBrace = True),
+			key.remove()
+		)
+
+		self.play(
+			plain.move_to(midDiagramPos - diagramWidth * RIGHT /2 + diagramWidth/3 * LEFT),
+		)
+		print(midDiagramPos - diagramWidth * RIGHT /2)
+		self.play(
+			plain.addTag("plain text")
+		)
+
+		self.play(
+			cipher.move_to(midDiagramPos + diagramWidth * RIGHT /2+diagramWidth/3 * RIGHT)
+		)
+		print(midDiagramPos)
+		self.play(
+			cipher.addTag("cipher text")
+		)
+
+		self.wait()
+
 
 class DesBruteForce(Scene):
 	def construct(self):
@@ -787,34 +890,29 @@ class DesBruteForce(Scene):
 		zda matchuje naše CipherTexty
 		"""
 
-		self.next_section(skip_animations = True)
+		self.next_section(skip_animations = False)
 
 		DesTextPosition = 3*UP
 		DesText = Tex(r"DES", color = textColor).move_to(DesTextPosition)
-		self.play(Write(DesText))
+		self.add(DesText)
 
 		# create plain and cipher text
 
-		plain = Btext(strPlainText, position = midDiagramPos - diagramWidth * RIGHT /2)
+		plain = Btext(strPlainText, position = midDiagramPos - diagramWidth * RIGHT /2 - diagramWidth/3 * RIGHT)
 		self.play(
-			plain.create()
+			plain.create(tag = True, tagStr = "plain text"),
+			run_time = 0.01
 		)
 
-		cipher = Btext(strCipherText, width = plain.width, height = plain.height, position = midDiagramPos + diagramWidth*RIGHT/2)
+		cipher = Btext(strCipherText, width = plain.width, height = plain.height, position = midDiagramPos + diagramWidth*RIGHT/2+diagramWidth/3 * RIGHT)
 		self.play(
-			cipher.create()
+			cipher.create(tag = True, tagStr = "cipher text"),
+			run_time = 0.01
 		)
 
-		key = Key(unknownKeyString, position = midDiagramPos)
+		key = Key(unknownKeyString, position = midDiagramPos + diagramWidth/3 * LEFT)
 		self.play(
 			key.createRectangleKey()
-		)
-
-		self.play(
-			plain.shift(diagramWidth/3 * LEFT),
-			key.shiftRec(diagramWidth/3 * LEFT),
-			cipher.shift(diagramWidth/3 * RIGHT)
-
 		)
 
 		guess = Btext(
@@ -829,14 +927,23 @@ class DesBruteForce(Scene):
 			#key.changeText(zeroString),
 			guess.create(noText = True),
 			key.createRedArrow(),
-			run_time = 1
+			#run_time = 1
 		)
 
+		self.next_section(skip_animations=False)
 
-		self.next_section(skip_animations = False)
+		# self.play(
+		# 	Succession(
+		# 		AnimationGroup(
+		# 			guess.changeText(constructRandomString(), empty = True),
+		# 		)
+		# 	)
+
+		# )
+
 
 		# first go one by one
-		waitingTimes = []
+		waitingTimes = [] 
 		L = 10 # TODO víc 
 		for i in range(L):
 			waitingTimes.append(
@@ -850,16 +957,25 @@ class DesBruteForce(Scene):
 		
 		anims = []
 
-		cnt = 0
-		for _, t in enumerate(waitingTimes):
-			actString = "000..." + '{0:05b}'.format((cnt % 32))
+		
 
+		cnt = 0
+		actString = "000..." + '{0:05b}'.format((cnt % 32))
+		self.play( # first one is done differently due to weird behaviour otherwise
+			key.changeText(actString),
+			guess.changeText(constructRandomString(), empty = True),
+			run_time  = waitingTimes[0]
+		)
+
+		for t in waitingTimes[1:L]:
+			actString = "000..." + '{0:05b}'.format((cnt % 32))
+		
 			anims.append(
 				Succession(
-					Wait(cumTimes[cnt]), 
+					Wait(cumTimes[cnt]- cumTimes[1]), 
 					AnimationGroup(
 						key.changeText(actString),
-						guess.changeText(constructRandomString()),
+ 						guess.changeText(constructRandomString()),
 						run_time = t
 					)
 				)
@@ -868,14 +984,14 @@ class DesBruteForce(Scene):
 
 		# fast forward
 
-		for big in range(2):
+		for big in range(5):
 			for _ in range(invMinTime):
 				actString = '{0:03b}'.format(big) + "..."
 				for _ in range(5):
 					actString += random.choice(["0", "1"])
 				anims.append(
 					Succession(
-						Wait(cumTimes[cnt]), 
+						Wait(cumTimes[cnt] - cumTimes[1]), 
 						AnimationGroup(
 							key.changeText(actString),
 							guess.changeText(constructRandomString()),
@@ -891,7 +1007,7 @@ class DesBruteForce(Scene):
 
 		anims.append(
 			Succession(
-				Wait(cumTimes[cnt]),
+				Wait(cumTimes[cnt] - cumTimes[1]),
 				AnimationGroup(
 					key.changeText(ourKeyString),
 					guess.changeText(strCipherText),
@@ -900,9 +1016,12 @@ class DesBruteForce(Scene):
 			)
 		)
 
+	
+
 		self.play(
 			*anims
 		)
+
 
 		self.play(
 			Circumscribe(guess.border),
@@ -910,6 +1029,15 @@ class DesBruteForce(Scene):
 		)
 
 		self.wait()
+
+		self.play(
+			plain.remove(),
+			plain.removeTag(),
+			cipher.removeTag(),
+			cipher.remove(),
+			guess.remove(),
+			key.remove()
+		)
 
 class TripleDes(Scene):
 	def construct(self):
@@ -924,8 +1052,6 @@ class TripleDes(Scene):
 		enough so that bruteforce is not a possibility, because 2^112 is 10^30,
 		which is just way too much. 
 		"""
-
-		upshift = 1
 
 		# beginning of the scene
 		self.next_section(skip_animations=False)
@@ -943,23 +1069,26 @@ class TripleDes(Scene):
 			constructRandomKeyString(len1 = 2, len2 = 2)
 		]
 
-		plain = Btext(strPlainText, position = midDiagramPos + diagramWidth * (5.0/6) * LEFT)
-		self.play(
-			plain.create(),
-			run_time = 0.01  #TODO proc nula nefunguje?
+		plain = Btext(
+			strPlainText, 
+			position = posPlain.copy()
 		)
 
-		self.play(Transform(DesText,TripleDes)) #TODO: vyhezkat, aby se písmenka DES jen posunula
+		self.play(Transform(DesText,TripleDes))
 
 		self.play(
-			plain.shift(posPlain - plain.position)
+			plain.create(tag = True, tagStr= "plain text")
 		)
+
+		self.wait()
+
 
 		ciphers = [
 			Btext(
 				constructRandomString(), 
 				position = pos.copy(), 
-				width = plain.width.copy()
+				width = plain.width,
+				height = plain.height
 			) for pos in cipherPositions
 		]
 
@@ -970,13 +1099,26 @@ class TripleDes(Scene):
 			) for (pos, str) in zip(keyPositions, keyStrings)
 		]
 
-		[self.play(
-				cipher.create(),
-				key.createRectangleKey(),
-				key.createRedArrow(),
-			) for (key, cipher) in zip (keys, ciphers)
-		]
 
+		self.play(
+			ciphers[0].create(),
+			keys[0].createRectangleKey(),
+			keys[0].createRedArrow(),
+		)
+		self.wait()
+
+		self.play(
+			ciphers[1].create(),
+			keys[1].createRectangleKey(),
+			keys[1].createRedArrow(),
+		)
+		self.wait()
+
+		self.play(
+			ciphers[2].create(tag = True, tagStr= "cipher text"),
+			keys[2].createRectangleKey(),
+			keys[2].createRedArrow(),
+		)
 		self.wait()
 
 		topKeys = [
@@ -1027,6 +1169,9 @@ class TripleDes(Scene):
 		newTitle = Tex(r"112 bits", color = textColor).move_to(topKeys[1].title.get_center())
 		newBrace = Brace(Group(newKeys[0][1], newKeys[1][1]), UP, color = textColor).move_to(topKeys[1].brace)
 		
+
+		# shift to the right
+
 		self.play(
 			Transform(DesText, DoubleDes),
 			*[txt.shift(txtShift) for txt in ciphers+[plain]],
@@ -1037,11 +1182,17 @@ class TripleDes(Scene):
 				for (key, [border, text]) in zip(topKeys, newKeys)
 			]),
 			Transform(topKeys[1].title, newTitle),
-			Transform(topKeys[1].brace, newBrace)
+			Transform(topKeys[1].brace, newBrace),
+			ciphers[2].tagText.animate().shift(-txtShift)
+		)
+
+		self.play(
+			FadeOut(ciphers[2].tagText),
+			ciphers[1].addTag("cipher text"),
+			run_time = 0.001
 		)
 
 
-		# TODO udelat hezky
 		self.play(
 			FadeOut(ciphers[2].border), *[FadeOut(txt) for txt in ciphers[2].lines], 
 			FadeOut(topKeys[2].border), FadeOut(topKeys[2].text),
@@ -1056,9 +1207,12 @@ class TripleDes(Scene):
 			keys[1].redArrow
 		)
 		self.play(
-			keys[0].createRedArrow()
+			keys[0].createRedArrow(), 
+			Circumscribe(ciphers[0].border),
 		)
+
 		self.play(
+			Circumscribe(ciphers[1].border),
 			keys[1].createRedArrow()
 		)
 
@@ -1074,44 +1228,55 @@ class TripleDes(Scene):
 			color = textColor
 		).move_to(5*RIGHT + 2*UP)
 		
-		# self.play(
-		# 	Write(txt)
-		# ) 
+		self.play(
+			Write(txt)
+		) 
 
 		# move to the middle
 
 		self.play(
 			Unwrite(txt),
+			plain.move_to(posPlain.copy()+midDiagramPos - bottomDiagramPos),
+			ciphers[1].move_to(posFinal+midDiagramPos - bottomDiagramPos),
+			keys[0].remove(),
+			keys[1].remove(),
 			topKeys[0].removeRec(noBrace=True),
 			topKeys[1].removeRec(),
-			keys[0].changeTextandSize(zeroString, shift = midDiagramPos - bottomDiagramPos + 0.5 * LEFT),
-			keys[1].changeTextandSize(zeroString, shift = midDiagramPos - bottomDiagramPos + 0.5 * RIGHT),
-			plain.shift(midDiagramPos - bottomDiagramPos + 1 * LEFT),
-			ciphers[0].shift(midDiagramPos - bottomDiagramPos),
-			ciphers[1].shift(midDiagramPos - bottomDiagramPos + 1 * RIGHT),			
+			ciphers[0].remove()
 		)
 
+		# self.play(
+		# 	Unwrite(txt),
+		# 	topKeys[0].removeRec(noBrace=True),
+		# 	topKeys[1].removeRec(),
+		# 	keys[0].changeTextandSize(zeroString, shift = midDiagramPos - bottomDiagramPos + 0.5 * LEFT),
+		# 	keys[1].changeTextandSize(zeroString, shift = midDiagramPos - bottomDiagramPos + 0.5 * RIGHT),
+		# 	plain.shift(midDiagramPos - bottomDiagramPos + 1 * LEFT),
+		# 	ciphers[0].shift(midDiagramPos - bottomDiagramPos),
+		# 	ciphers[1].shift(midDiagramPos - bottomDiagramPos + 1 * RIGHT),			
+		# )
 
-		# bruteforce animation
-		self.next_section(skip_animations=False)
 
-		for i in range(1):
-			for big in range(4):
-				for _ in range(invMinTime):
-					actString = '{0:03b}'.format(big) + "..."
-					for _ in range(5):
-						actString += random.choice(["0", "1"])
-					self.play(
-						keys[1].changeText(actString),
-						ciphers[1].changeText(constructRandomString()),
-						run_time = minTime/2
-					)
-					self.wait(minTime/2)
-			self.play(
-				keys[0].changeText("000..." + '{0:05b}'.format(i+1)),
-				ciphers[0].changeText(constructRandomString()),
-				run_time = 0.01
-			)
+		# # bruteforce animation
+		# self.next_section(skip_animations=False)
+
+		# for i in range(1):
+		# 	for big in range(4):
+		# 		for _ in range(invMinTime):
+		# 			actString = '{0:03b}'.format(big) + "..."
+		# 			for _ in range(5):
+		# 				actString += random.choice(["0", "1"])
+		# 			self.play(
+		# 				keys[1].changeText(actString),
+		# 				ciphers[1].changeText(constructRandomString()),
+		# 				run_time = minTime/2
+		# 			)
+		# 			self.wait(minTime/2)
+		# 	self.play(
+		# 		keys[0].changeText("000..." + '{0:05b}'.format(i+1)),
+		# 		ciphers[0].changeText(constructRandomString()),
+		# 		run_time = 0.01
+		# 	)
 
 
 		self.wait()
@@ -1154,8 +1319,8 @@ class DesMITM(Scene):
 			position = posPlain,
 		)
 		self.play(
-			plain.create(),
-			run_time = 1  
+			plain.create(tag = True, tagStr="plain text"),
+			run_time = 0.001
 		)
 
 		cipher = Btext(
@@ -1165,17 +1330,16 @@ class DesMITM(Scene):
 			height = plain.height
 		)
 		self.play(
-			cipher.create(),
-			run_time = 1  
+			cipher.create(tag = True, tagStr="cipher text"),
+			run_time = 0.001
 		)		
 
-		# generating all intermediate strings
+		# generating all intermediate strings in a table
 
 
 		key = Key(zeroString, position = posKey)
 
 		self.play(
-			#inter.create(),
 			key.createRectangleKey(),
 			key.createRedArrow()
 		)
@@ -1185,8 +1349,12 @@ class DesMITM(Scene):
 		databaseInters = []
 		keyStrings = []
 		
-		w = 2
-		h = 2
+		w = 10
+		h = 6
+
+		# w = 2
+		# h = 5
+
 		for i in range(h):
 			for j in range(w):
 				databasePositions.append(topLeft + i * 0.7 * DOWN + j * 0.3 * RIGHT)
@@ -1219,9 +1387,9 @@ class DesMITM(Scene):
 					curInter.create(),
 					run_time = 0.01
 				),
-				AnimationGroup(
-					Wait()
-				),
+				# AnimationGroup(
+				# 	Wait()
+				# ),
 				AnimationGroup(
 					AnimationGroup(
 						curInter.move_to(pos),
@@ -1229,7 +1397,7 @@ class DesMITM(Scene):
 					),
 					AnimationGroup(
 						key.changeText(keyString),
-						run_time = 0.1
+						run_time = minTime 
 					),
 					lag_ratio = 0.0
 				)
@@ -1237,34 +1405,40 @@ class DesMITM(Scene):
 
 		self.play(AnimationGroup(
 			*anims, 
-			lag_ratio = 0.1
+			lag_ratio = minTime
 		))
 
+		self.next_section(skip_animations=False)
 
-		datSizeBrace = Brace(Group(*databaseInters), direction = DOWN).shift(5 * textPadding * DOWN)
-		datSizeText = Text(r"$2^{56}$ intermediate texts").next_to(datSizeBrace,DOWN)
-		datSize = Group(
-			datSizeBrace,
-			datSizeText
-		)
-		self.play(
-			Create(datSizeBrace),
-			Write(datSizeText)
-		)
+
 
 		self.next_section(skip_animations=False)
 
 		# key disappears and database shifts
 
-		shft = 4*LEFT
+		shft = 5*LEFT
 		self.play(
-			key.remove(),
+			key.remove()
+		)
+		self.play(
 			*[
-				bt.shift(4*shft) 
+				bt.shift(shft) 
 				for bt in databaseInters
 			],
-			datSize.animate().shift(4*LEFT)
 		)
+
+		# add brace
+
+		databaseBrace = Brace(Group(databaseInters[-1].border, databaseInters[-1-w].border),RIGHT,color = textColor )
+		#databaseBrace = Brace(databaseInters[w*h-1].border, RIGHT),
+		databaseBraceText = Tex(r"$2^{56} \approx 10^{17}$ intermediate texts", color = textColor, font_size = fontSize).move_to(databaseBrace.get_center()).next_to(databaseBrace, RIGHT)
+		databaseBraceGroup = Group(databaseBrace, databaseBraceText)
+		
+		self.play(
+			Create(databaseBrace),
+			Write(databaseBraceText)
+		)
+		self.wait()
 
 		# blue key appears
 
@@ -1287,53 +1461,135 @@ class DesMITM(Scene):
 		)
 		
 		# trying blue keys
-
-		t = 5
-		for i in range(t):
-			newKeyStr = constructRandomKeyString(
-				prefix = int((i * (2 ** 3)) / (1.5 * t))
+		# first go one by one
+		waitingTimes = []
+		L = 0 
+		for i in range(L):
+			waitingTimes.append(
+				max((1.0 - (i * 1.0 / L)), minTime)
 			)
+		for i in range(1000):
+			waitingTimes.append(minTime)
+		
+		cumTimes = np.cumsum(np.array(waitingTimes))
+		np.insert(cumTimes, 0, 0)
+		
+		anims = []
 
-			self.play(
-				key2.changeText(newKeyStr),
-				inter.changeText(constructRandomString()),
-				run_time = 0.2
+		cnt = 0
+		for t in waitingTimes[:L]:
+			actString = "000..." + '{0:05b}'.format((cnt % 32))
+
+			anims.append(
+				Succession(
+					Wait(cumTimes[cnt]), 
+					AnimationGroup(
+						key2.changeText(actString),
+						inter.changeText(constructRandomString()),
+						run_time = t
+					)
+				)
 			)
+			cnt += 1
+
+		# fast forward
+
+		for big in range(6):
+			for _ in range(invMinTime):
+				actString = '{0:03b}'.format(big) + "..."
+				for _ in range(5):
+					actString += random.choice(["0", "1"])
+				anims.append(
+					Succession(
+						Wait(cumTimes[cnt]), 
+						AnimationGroup(
+							key2.changeText(actString),
+							inter.changeText(constructRandomString()),
+							run_time = minTime
+						)
+					)
+				)
+
+				cnt += 1
+
+
+		# we found the correct key
+
+
+
+		hit = (2*w*h) // 3 + 2
+		strLinesHit = databaseInters[hit].strLines.copy()
+		inter2 = databaseInters[hit]
+
+		# inter2 = Btext(
+		# 	strLinesHit,
+		# 	position = databaseInters[hit].position,
+		# 	width = databaseInters[hit].width,
+		# 	height = databaseInters[hit].height,
+		# 	fill_color = config.background_color,
+		# 	fill_opacity = 1
+		# )
+
+		anims.append(
+			Succession(
+				Wait(cumTimes[cnt]),
+				AnimationGroup(
+					key2.changeText("110...10010"),
+					inter.changeText(strLinesHit),
+					run_time = minTime
+				)
+			)
+		)
+
+		self.play(
+			*anims
+		)
+
+		#fade in the correct text
+
+		inter2.position = databaseInters[hit].position
+		inter2.border.move_to(inter2.position)
+		inter2.lines.move_to(inter2.position)
+
+		# self.play(
+		# 	FadeIn(inter2.border),
+		# 	AnimationGroup(
+		# 		*[FadeIn(text) for text in inter2.lines],
+		# 		#lag_ratio = 0.2
+		# 	),
+		# 	run_time = 1
+		# )
 
 		self.next_section(skip_animations=False)
 
-		# we found one
-		hit = 1
-		strLinesHit = databaseInters[hit].strLines.copy()
 
-		inter2 = Btext(
-			strLinesHit,
-			position = databaseInters[hit].position,
-			width = databaseInters[hit].width,
-			height = databaseInters[hit].height,
-			fill_color = config.background_color,
-			fill_opacity = 1
-		)
-
-		self.play(
-			key2.changeText("101...10010"),
-			inter.changeText(strLinesHit),
-			run_time = 0.2
-		)
+		anims = []
+		for it, inte in enumerate(databaseInters):
+			if it == hit:
+				anims.append(
+					inte.shift(2*UP)
+				)
+			else:
+				anims.append(
+					inte.shift(0*UP)
+				)
 
 		self.play(
-			inter2.create(),
-			run_time = 0.01
+			*anims
 		)
-		self.wait()
+
+
 		self.play(
 			Circumscribe(inter.border),
 			Circumscribe(inter2.border)
 		)
 
+		# remove all other texts
 		self.play(
 			*[datInter.remove() for datInter in databaseInters],
-			inter2.move_to(inter2.position)
+			inter2.move_to(inter2.position),
+			Unwrite(databaseBraceText),
+			Uncreate(databaseBrace)
 		)
 
 		self.play(
@@ -1356,6 +1612,20 @@ class DesMITM(Scene):
 		)
 
 		self.wait()
+
+		# remove everything
+
+		self.play(
+			plain.remove(),
+			plain.removeTag(),
+			inter.remove(),
+			inter2.remove(),
+			cipher.remove(),
+			cipher.removeTag(),
+			key.remove(),
+			key2.remove(),
+			Unwrite(DesText)
+		)
 
 class GeneralMITM(ThreeDScene):
 	def construct(self):
@@ -1431,13 +1701,15 @@ class GeneralMITM(ThreeDScene):
 				for str in strList
 			]
 			for strList in [
-				[r"$2^{112}$", r"$n$", r" possibilities"],
+				[r"$2^{112}$", r"$n$", r" possible keys"],
 				[r"{\it Meet in the Middle} solution:"], 
 				[r"$2^{56}$", r"$\sqrt{n}$", r" work"],
 				[r"$2^{56}$", r"$\sqrt{n}$", r" memory"], 
 				[r"$n = 2^{112}$"]
 			]
 		]
+
+
 
 		for Texts, pos in zip([cubeTexts, desTexts], [halfScreen*LEFT/2, halfScreen*RIGHT/2]):
 			Group(
@@ -1548,6 +1820,7 @@ class GeneralMITM(ThreeDScene):
 
 		# change numbers to n
 
+
 		self.play(
 			*[
 				Write(Texts[4][0])
@@ -1556,12 +1829,19 @@ class GeneralMITM(ThreeDScene):
 		)
 
 
+		# fix roots that are a bit off
+		desTexts[2][1].shift(0.1*DOWN)
+		cubeTexts[2][1].shift(0.1*DOWN)
+
 		self.play(
 			*[
 				Transform(strList[0], strList[1])
 				for strList in desTexts[0:1] + desTexts[2:4] + cubeTexts[0:1] + cubeTexts[2:4]
 			]
 		)
+
+
+
 
 		self.wait()
 
