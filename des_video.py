@@ -12,7 +12,7 @@ from solarized import *
 from manim_rubikscube import *
 
 # Temne pozadi, ale zakomentovat pro DesIntro a GeneralMITM !!!
-config.background_color = BASE02
+#config.background_color = BASE02
 
 
 random.seed(0)
@@ -1076,6 +1076,8 @@ class TripleDes(Scene):
 
 		self.play(Transform(DesText,TripleDes))
 
+		self.wait()
+
 		self.play(
 			plain.create(tag = True, tagStr= "plain text")
 		)
@@ -1129,6 +1131,8 @@ class TripleDes(Scene):
 		]
 		self.play(*[key.createRectangleKey(noBrace=True) for key in topKeys], run_time = 0.01)
 		
+		self.wait()
+
 		self.play(
 			topKeys[0].shiftRec( 2.5*UP   
 				+ (keys[1].position - keys[0].position) 
@@ -1140,6 +1144,7 @@ class TripleDes(Scene):
 				+ (keys[2].border.get_width() + keys[1].border.get_width())/2 * RIGHT
 			)
 		)
+		self.wait()
 		
 		newTitle = Tex(r"168 bits", color = textColor).move_to(topKeys[1].title.get_center())
 		newBrace = Brace(Group(topKeys[0].text, topKeys[2].text), UP, color = textColor).move_to(topKeys[1].brace.get_center())
@@ -1185,6 +1190,7 @@ class TripleDes(Scene):
 			Transform(topKeys[1].brace, newBrace),
 			ciphers[2].tagText.animate().shift(-txtShift)
 		)
+		self.wait()
 
 		self.play(
 			FadeOut(ciphers[2].tagText),
@@ -1192,6 +1198,7 @@ class TripleDes(Scene):
 			run_time = 0.001
 		)
 
+		self.wait()
 
 		self.play(
 			FadeOut(ciphers[2].border), *[FadeOut(txt) for txt in ciphers[2].lines], 
@@ -1199,6 +1206,7 @@ class TripleDes(Scene):
 			FadeOut(keys[2].border), FadeOut(keys[2].text), FadeOut(keys[2].redArrow), FadeOut(keys[2].braceTitle),
 		)
 
+		self.wait()
 
 		# highlight arrows
 
@@ -1210,11 +1218,13 @@ class TripleDes(Scene):
 			keys[0].createRedArrow(), 
 			Circumscribe(ciphers[0].border),
 		)
+		self.wait()
 
 		self.play(
 			Circumscribe(ciphers[1].border),
 			keys[1].createRedArrow()
 		)
+		self.wait()
 
 		# write down the calculation
 
@@ -1231,6 +1241,7 @@ class TripleDes(Scene):
 		self.play(
 			Write(txt)
 		) 
+		self.wait()
 
 		# move to the middle
 
@@ -1244,6 +1255,7 @@ class TripleDes(Scene):
 			topKeys[1].removeRec(),
 			ciphers[0].remove()
 		)
+		self.wait()
 
 		# self.play(
 		# 	Unwrite(txt),
@@ -1322,6 +1334,7 @@ class DesMITM(Scene):
 			plain.create(tag = True, tagStr="plain text"),
 			run_time = 0.001
 		)
+		self.wait()
 
 		cipher = Btext(
 			constructRandomString(), 
@@ -1333,6 +1346,7 @@ class DesMITM(Scene):
 			cipher.create(tag = True, tagStr="cipher text"),
 			run_time = 0.001
 		)		
+		self.wait()
 
 		# generating all intermediate strings in a table
 
@@ -1343,6 +1357,7 @@ class DesMITM(Scene):
 			key.createRectangleKey(),
 			key.createRedArrow()
 		)
+		self.wait()
 
 		topLeft = topDiagramPos + 1*RIGHT
 		databasePositions = []
@@ -1407,6 +1422,7 @@ class DesMITM(Scene):
 			*anims, 
 			lag_ratio = minTime
 		))
+		self.wait()
 
 		self.next_section(skip_animations=False)
 
@@ -1426,6 +1442,7 @@ class DesMITM(Scene):
 				for bt in databaseInters
 			],
 		)
+		self.wait()
 
 		# add brace
 
@@ -1459,6 +1476,7 @@ class DesMITM(Scene):
 			key2.createBlueArrow(),
 			inter.create()
 		)
+		self.wait()
 		
 		# trying blue keys
 		# first go one by one
@@ -1544,6 +1562,7 @@ class DesMITM(Scene):
 		self.play(
 			*anims
 		)
+		self.wait()
 
 		#fade in the correct text
 
@@ -1577,12 +1596,14 @@ class DesMITM(Scene):
 		self.play(
 			*anims
 		)
+		self.wait()
 
 
 		self.play(
 			Circumscribe(inter.border),
 			Circumscribe(inter2.border)
 		)
+		self.wait()
 
 		# remove all other texts
 		self.play(
@@ -1591,12 +1612,14 @@ class DesMITM(Scene):
 			Unwrite(databaseBraceText),
 			Uncreate(databaseBrace)
 		)
+		self.wait()
 
 		self.play(
 			inter.move_to((plain.position + cipher.position)/2),
 			key2.moveRec(plain.position/4 + cipher.position*3.0/4),
 			inter2.move_to((plain.position + cipher.position)/2 ),
 		)
+		self.wait()
 
 		key = Key(
 			constructRandomKeyString(),
@@ -1606,6 +1629,8 @@ class DesMITM(Scene):
 			key.createRectangleKey(),
 			key.createRedArrow()
 		)
+		self.wait()
+
 		self.play(
 			key2.removeBlueArrow(),
 			key.removeRedArrow()
@@ -1626,6 +1651,8 @@ class DesMITM(Scene):
 			key2.remove(),
 			Unwrite(DesText)
 		)
+		self.wait()
+
 
 class GeneralMITM(ThreeDScene):
 	def construct(self):
@@ -1671,6 +1698,8 @@ class GeneralMITM(ThreeDScene):
 			MoveToTarget(backgroundRect),
 			run_time = 1	
 		)
+		self.wait()
+
 
 		halfScreen = 14.2 / 2
 
@@ -1733,21 +1762,28 @@ class GeneralMITM(ThreeDScene):
 
 		self.play(FadeIn(cube))
 		self.play(Rotate(cube, 2 * PI, UP), run_time=1)
+		self.wait()
 		
 		for Texts in [cubeTexts]:
 			self.play(AnimationGroup(
 					Write(Texts[0][0]),
 					Write(Texts[0][2])
 			))
+			self.wait()
+
 			self.play(Write(Texts[1][0]))
+
+			self.wait()
 			self.play(AnimationGroup(
 				Write(Texts[2][0]),
 				Write(Texts[2][2])
 			))
+			self.wait()
 			self.play(AnimationGroup(
 				Write(Texts[3][0]),
 				Write(Texts[3][2])
 			))
+			self.wait()
 
 		# des animations
 
@@ -1800,6 +1836,7 @@ class GeneralMITM(ThreeDScene):
 			Create(key1),
 			Create(key2),
 		)
+		self.wait()
 
 		#des text
 
@@ -1808,15 +1845,22 @@ class GeneralMITM(ThreeDScene):
 					Write(Texts[0][0]),
 					Write(Texts[0][2])
 			))
+			self.wait()
+
 			self.play(Write(Texts[1][0]))
+
+			self.wait()
 			self.play(AnimationGroup(
 				Write(Texts[2][0]),
 				Write(Texts[2][2])
 			))
+			self.wait()
+
 			self.play(AnimationGroup(
 				Write(Texts[3][0]),
 				Write(Texts[3][2])
 			))
+			self.wait()
 
 		# change numbers to n
 
@@ -1827,6 +1871,7 @@ class GeneralMITM(ThreeDScene):
 				for Texts in [desTexts, cubeTexts]
 			]	
 		)
+		self.wait()
 
 
 		# fix roots that are a bit off
