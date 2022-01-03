@@ -36,7 +36,7 @@ class UnzoomCubeGraph(util.RubikScene):
     def construct(self):
         self.next_section(skip_animations=False)
 
-        solved_cube = RubiksCube(cubie_size=0.18)
+        solved_cube = RubiksCube(cubie_size=0.15).set_stroke_width(0.5)
 
         n_nodes, edges, anims_to_do, g = get_graph()
 
@@ -116,7 +116,7 @@ class HighlightCubeGraph(util.RubikScene):
     def construct(self):
         self.next_section(skip_animations=False)
 
-        solved_cube = RubiksCube(cubie_size=0.18)
+        solved_cube = RubiksCube(cubie_size=0.15).set_stroke_width(0.5)
         n_nodes, edges, anims_to_do, g = get_graph()
         g.fade(0)
         for v in g.vertices.values():
@@ -185,16 +185,131 @@ class HighlightCubeGraph(util.RubikScene):
         self.play(*[cube.animate.scale(infty) for cube in cubes_on_scene])
         self.wait()
 
+
 class BFSCubeGraph(util.RubikScene):
     def construct(self):
         self.next_section(skip_animations=False)
 
-        solved_cube = RubiksCube(cubie_size=0.18)
-        n_nodes, edges, anims_to_do, g = get_graph()
+        solved_cube = RubiksCube(cubie_size=0.15).set_stroke_width(0.5).shift(OUT)
+        n_nodes, _edges, anims_to_do, g = get_graph()
+        g.shift(IN)
         g.fade(0)
         self.add(g)
 
+        cubes = {0: solved_cube}
+        cubes_on_scene = [solved_cube]
 
+        while anims_to_do:
+            leftover = []
+            for (c1, c2, move) in anims_to_do:
+                if c1 in cubes:
+                    cnew = cubes[c1].copy()
+                    cnew.do_move(move).move_to(g[c2].get_center() + OUT)
+
+                    cubes_on_scene.append(cnew)
+                    cubes[c2] = cnew
+                else:
+                    leftover.append((c1, c2, move))
+
+            anims_to_do = leftover
+
+        self.add(*cubes_on_scene)
+
+        solved_i = 0
+        scrambled_i = 10
+        radius = 0.6
+        radius2 = 0.45
+
+        solved_circle = Dot(
+            g[solved_i].get_center(), radius=radius, fill_color=RED, shade_in_3d=True
+        )
+        scrambled_circle = Dot(
+            g[scrambled_i].get_center(), radius=radius, fill_color=RED, shade_in_3d=True
+        )
+
+        self.play(GrowFromCenter(solved_circle), GrowFromCenter(scrambled_circle))
+
+        self.wait()
+        shortest_path = set([0, 1, 8, 9, 10])
+        edges = [
+            (u, v)
+            for (u, v) in g.edges.keys()
+            if u in shortest_path and v in shortest_path
+        ]
+        circles = [
+            Dot(radius=radius2, fill_color=RED, shade_in_3d=True).move_to(g[v])
+            for v in shortest_path
+        ]
+        self.play(
+            *[g.edges[e].animate.set_color(RED) for e in edges],
+            *[GrowFromCenter(circle) for circle in circles],
+        )
+        self.wait()
+
+        self.play(
+            *[g.edges[e].animate.set_color(GRAY) for e in edges],
+            *[ShrinkToCenter(circle) for circle in circles],
+            ShrinkToCenter(solved_circle),
+        )
+
+        self.wait()
+        self.next_section("BFS", skip_animations=False)
+
+        adj = [[] for _ in range(n_nodes)]
+        for u, v in g.edges.keys():
+            adj[u].append(v)
+            adj[v].append(u)
+
+        bfs_vertices, bfs_edges = util.bfs(adj, scrambled_i)
+        bfs_vertices.append([])
+
+        circles = {
+            v: Dot(
+                g[v].get_center(),
+                radius=radius2 if v != solved_i else radius,
+                fill_color=RED,
+                shade_in_3d=True,
+            )
+            for v in range(n_nodes)
+        }
+
+        seen = set()
+        for i, (l_vertices, l_edges) in enumerate(zip(bfs_vertices, bfs_edges)):
+            anims = []
+            for v in l_vertices:
+                anims.append(GrowFromCenter(circles[v]))
+                seen.add(v)
+
+            for e in l_edges:
+                if e not in g.edges:
+                    e = e[1], e[0]
+
+                edge = g.edges[e]
+                anims.append(edge.animate.set_color(RED))
+
+            print(i)
+            if i > 0:
+                self.play_bfs_sound(time_offset=0.2)
+            self.play(*anims)
+
+            if solved_i in l_vertices:
+                break
+
+        self.wait()
+
+        self.play(
+            *[
+                g.edges[(u, v)].animate.set_color(GRAY)
+                for (u, v) in g.edges.keys()
+                if (u not in shortest_path or v not in shortest_path)
+            ],
+            *[
+                ShrinkToCenter(circles[v])
+                for v in range(n_nodes)
+                if v not in shortest_path and v in seen
+            ],
+        )
+        self.wait()
 
 
 def get_graph():

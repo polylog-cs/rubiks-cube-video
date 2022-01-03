@@ -449,33 +449,6 @@ class NeighborCount(util.RubikScene):
         self.wait()
 
 
-def bfs(adj, start):
-    res_vertices = [[start]]
-    res_edges = [[]]
-    seen = set([start])
-
-    while True:
-        cur_vertices = []
-        cur_edges = []
-
-        for v1 in res_vertices[-1]:
-            for v2 in adj[v1]:
-                cur_edges.append((v1, v2))
-
-                if v2 not in seen:
-                    cur_vertices.append(v2)
-                    seen.add(v2)
-
-        if cur_vertices:
-            res_vertices.append(cur_vertices)
-            res_edges.append(cur_edges)
-        else:
-            res_edges.append(cur_edges)
-            break
-
-    return res_vertices, res_edges
-
-
 class FriendshipGraph(util.RubikScene):
     def construct(self):
         """
@@ -524,7 +497,7 @@ class FriendshipGraph(util.RubikScene):
                     g[j].append(i)
                     edges.append((i, j))
 
-            bfs_vertices, bfs_edges = bfs(g, 0)
+            bfs_vertices, bfs_edges = util.bfs(g, 0)
             bfs_vertices.append([])
 
             # print("Actual steps:", len(bfs_vertices) - 2)
