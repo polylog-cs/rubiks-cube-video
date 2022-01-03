@@ -12,7 +12,7 @@ from solarized import *
 from manim_rubikscube import *
 
 # Temne pozadi, ale zakomentovat pro DesIntro a GeneralMITM !!!
-#config.background_color = BASE02
+config.background_color = BASE02
 
 
 random.seed(0)
@@ -1586,7 +1586,7 @@ class DesMITM(Scene):
 		for it, inte in enumerate(databaseInters):
 			if it == hit:
 				anims.append(
-					inte.shift(2*UP)
+					inte.shift(2.4*UP)
 				)
 			else:
 				anims.append(

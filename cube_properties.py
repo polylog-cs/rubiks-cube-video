@@ -1,6 +1,6 @@
 import random
 import math
-
+import numpy as np
 from manim import *
 
 # Use our fork of manim_rubikscube!
@@ -508,17 +508,48 @@ class FriendshipGraph(util.RubikScene):
             if attempts % 100 == 0:
                 print(f"{attempts} unsuccessful attempts")
 
+
+        # construct the graph object
+        # icons2 = {}
+        # for i in range(N):
+        #     icons2[i] = ImageMobject("img/icon.png")
+
         ganim = Graph(
             vertices,
             edges,
             layout="kamada_kawai",
             layout_scale=5,
+            # vertex_mobjects = icons2,
             vertex_config={"fill_color": GRAY},
             edge_config={"stroke_color": GRAY},
-        )
+        ).move_to(ORIGIN)
 
-        ganim.scale_to_fit_height(6.5)
+        positions = {}
+        for i in range(N):
+            positions[i] = np.array([ganim.vertices[i].get_center()[0]*1.2, ganim.vertices[i].get_center()[1], 0.0])
+
+        positions[0] += 0.3*RIGHT
+        positions[7] += 1*LEFT + 1*UP
+        positions[27] += 2*LEFT + 1*DOWN
+        positions[45] += 0.5*RIGHT + 0.5*DOWN
+        positions[31] += 1*LEFT + 1*DOWN
+        positions[18] += 1*RIGHT + 1*UP
+        positions[48] = positions[33] + 0.5*(UP+RIGHT)
+        positions[33] += 0.2*(RIGHT + DOWN)
+        positions[24] += 0.5 * DOWN
+        positions[15] += 0.3*(DOWN + LEFT)
+        positions[21] += 0.8*(DOWN + RIGHT)
+        positions[38] += 0.8*(LEFT)+0.4*UP
+        positions[20] += 0.4*(LEFT + UP)
+        positions[14] += 0.4*(LEFT + UP)
+
+
+
+        ganim.change_layout(positions)
+
+        ganim.scale_to_fit_height(6.7)
         ganim.move_to(RIGHT * 2)
+
 
         text_scale = 1.8
         steps_tex = (
@@ -529,17 +560,49 @@ class FriendshipGraph(util.RubikScene):
 
         ganim.move_to(ORIGIN)
 
+
+        # icons are separate from graph, scale to fit height does not like vertex_mobjects
+        icons = []
+        for i in range(N):
+            icons.append(Dot(color = GRAY).move_to(
+                    ganim.vertices[i].get_center()
+                ))
+
+
         guy = ImageMobject("img/excited_guy.png").set_z_index(100)
 
-        self.play(FadeIn(ganim))
+        # reveal graph
+        self.play(
+            FadeIn(ganim),
+            *[FadeIn(icon) for icon in icons]
+        )
+
+        # reveal icons
+        self.play(
+            *[Transform(
+                icon,
+                Tex("$" + str(i) + "$", color = BLACK).move_to(icon.get_center())
+                # gen_icon(
+                #     height = 0.5
+                # ).move_to(
+                #     icon.get_center()
+                # )
+            ) for i, icon in enumerate(icons)]
+        )
         self.wait()
+
+
+        # reveal guy
         self.play(FadeIn(guy))
         self.wait()
         self.play(guy.animate.move_to(ganim.vertices[0].get_center()).scale(0.2))
         self.wait()
+
+
         self.play(
             ganim.animate.shift(RIGHT * 2),
             guy.animate.shift(RIGHT * 2),
+            *[icon.animate.shift(RIGHT*2) for icon in icons],
             FadeIn(steps_tex),
         )
         self.wait()
@@ -547,6 +610,7 @@ class FriendshipGraph(util.RubikScene):
         highlight_color = RED
         flash_color = YELLOW
 
+        visited = set()
         for i, (l_vertices, l_edges) in enumerate(zip(bfs_vertices, bfs_edges)):
             anims = []
 
@@ -558,41 +622,78 @@ class FriendshipGraph(util.RubikScene):
                 )
                 anims.append(steps_tex.animate.become(steps_tex2))
 
-            for v in l_vertices:
-                anims.append(
-                    FadeIn(
-                        Dot(
-                            ganim.vertices[v].get_center(),
-                            color=highlight_color,
-                            z_index=10,
+                for v in l_vertices:
+                    anims.append(
+                        FadeIn(
+                            Dot(
+                                ganim.vertices[v].get_center(),
+                                color=highlight_color,
+                                z_index=10,
+                            )
                         )
                     )
-                )
-                anims.append(
-                    Flash(
-                        ganim.vertices[v].get_center(),
-                        color=flash_color,
-                        z_index=10,
-                        time_width=0.5,
+                    anims.append(
+                        Succession(
+                            Wait(0),
+                            Flash(
+                                ganim.vertices[v].get_center(),
+                                color=flash_color,
+                                z_index=10,
+                                time_width=0.5,
+                            )
+                        )
                     )
-                )
 
-            for e in l_edges:
-                swapped = False
-                if e not in ganim.edges:
-                    e = e[1], e[0]
-                    swapped = True
+                for e in l_edges:
+                    swapped = False
+                    if e not in ganim.edges:
+                        e = e[1], e[0]
+                        swapped = True
 
-                edge = ganim.edges[e]
+                    edge = ganim.edges[e]
 
-                start, end = edge.get_start_and_end()
-                if swapped:
-                    start, end = end, start
+                    start, end = edge.get_start_and_end()
+                    if swapped:
+                        start, end = end, start
 
-                anims.append(Create(Line(start, end, color=highlight_color)))
+                    if not e[0] in visited or not e[1] in visited:
+                        anims.append(Create(Line(start, end, color=highlight_color)))
+                        visited.add(e[0])
+                        visited.add(e[1])
 
-            if i > 0:
-                self.play_bfs_sound(time_offset=0.2)
-            self.play(*anims)
+                if i > 0:
+                    self.play_bfs_sound(time_offset=0.2)
+                self.play(*anims)
 
         self.wait()
+
+
+def gen_icon(color = BLUE, height = 1):
+    pnts = [
+        np.array([407.837, 313.233, 0.0]),
+        np.array([340.843, 431.234, 0.0]),
+        np.array([297.995, 558.503, 0.0]),
+        np.array([253.986, 431.689, 0.0]),
+        np.array([187.414, 311.624, 0.0]),
+    ]
+
+    icon = ArcPolygon(
+        *pnts,
+        color = color,
+        arc_config = [
+            { 'radius': 119.256, 'color': color},
+            { 'radius': 70.9444, 'color': color},
+            { 'radius': 70.9444, 'color': color},
+            { 'radius': 119.256, 'color': color},
+            { 'radius': 216.488, 'color': color},
+
+        ],
+        fill_color = color,
+		fill_opacity = 1
+    ).move_to(
+        0*DOWN
+    ).scale_to_fit_height(
+        height
+    )
+
+    return icon
