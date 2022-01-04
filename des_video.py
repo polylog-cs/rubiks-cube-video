@@ -191,13 +191,10 @@ class Btext:
 			)
 
 		return AnimationGroup(
-
 			AnimationGroup(
-				Create(self.border),
-				run_time = 10
+				DrawBorderThenFill(self.border),
 			),
-
-			*anim, 
+			*anim,
 		)
 
 	def highlight(self):
@@ -1100,7 +1097,6 @@ class TripleDes(Scene):
 				position = pos.copy(), 
 			) for (pos, str) in zip(keyPositions, keyStrings)
 		]
-
 
 		self.play(
 			ciphers[0].create(),
