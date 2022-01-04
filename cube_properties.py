@@ -28,7 +28,7 @@ class Neighborhood(util.RubikScene):
         TODO: v druhe fazi jdou cary pres kostky
         TODO: zvuk - stoupající akordy na rhodes?
         """
-        self.next_section("First layer", skip_animations=True)
+        self.next_section("First layer", skip_animations=False)
 
         edges = set()
         q = [RubiksCube(cubie_size=0.2)]
@@ -99,6 +99,7 @@ class Neighborhood(util.RubikScene):
                 )
             )
 
+        self.play_bfs_sound()
         self.play(LaggedStart(*anims, lag_ratio=0.01), q[0].animate.shift(10 * OUT))
         anims = []
 
@@ -155,6 +156,7 @@ class Neighborhood(util.RubikScene):
             self.bring_to_front(cube)
             anims.append(cube.animate.shift(ORIGIN))
 
+        self.play_bfs_sound()
         self.play(LaggedStart(*anims, lag_ratio=0.001))
         self.wait()
 

@@ -1,3 +1,4 @@
+import random
 from manim import *
 
 # Use our fork of manim_rubikscube!
@@ -217,7 +218,22 @@ class BFSOneSide(util.RubikScene):
             FadeIn(circle_anims_from.circles[n_steps_small - 1]),
             FadeIn(circle_anims_from.label),
         )
-        self.wait(2)
+        self.wait()
+
+        left_group = Group(
+            circle_anims_from.circles[n_steps_small - 1],
+            circle_anims_from.label,
+            cube_from,
+        )
+        right_group = Group(
+            circle_anims_to.circles[n_steps_small - 1],
+            circle_anims_to.label,
+            cube_to,
+        )
+
+        self.play(left_group.animate.shift(LEFT), right_group.animate.shift(RIGHT))
+        self.wait()
+        # TODO dokoncit?
 
         self.play(
             FadeOut(circle_anims_from.circles[n_steps_small - 1]),
@@ -276,9 +292,9 @@ class CubeMITM(util.RubikScene):
         )
 
         for anims_from, anims_to in zip(circle_anims_from, circle_anims_to):
-            self.play_bfs_sound(animation_run_time=1/3)
+            self.play_bfs_sound(animation_run_time=1 / 3)
             self.play(*anims_from, run_time=1 / 3)
-            self.play_bfs_sound(animation_run_time=1/3)
+            self.play_bfs_sound(animation_run_time=1 / 3)
             self.play(*anims_to, run_time=1 / 3)
 
         self.wait()
@@ -294,6 +310,9 @@ class CubeMITM(util.RubikScene):
 
         for anims_from, anims_to in zip(path_anims_from, path_anims_to):
             self.play(*(anims_from + anims_to), run_time=1 / 3)
+            self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav")
+        
+        self.add_sound("audio/polylog_success.wav", time_offset=0.5)
 
         self.wait()
 
@@ -309,6 +328,7 @@ class CubeMITM(util.RubikScene):
         )
 
         for i, move in zip(range(len(points_both)), util.FELIKS_UNSCRAMBLE_MOVES):
+            self.play_cube_sound()
             self.play(
                 CubeMove(cube_from, move, points_both[i].get_center() + DOWN),
                 run_time=1 / 3,

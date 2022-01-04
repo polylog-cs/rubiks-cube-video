@@ -1,6 +1,7 @@
 import itertools
 
 from manim import *
+from manim.animation.composition import DEFAULT_LAGGED_START_LAG_RATIO
 
 # Use our fork of manim_rubikscube!
 from manim_rubikscube import *
@@ -169,12 +170,14 @@ class MoveDefinition(util.RubikScene):
         self.wait()
 
         anims = []
+        lag_ratio = DEFAULT_LAGGED_START_LAG_RATIO * 2
 
         for j in [2, 0, 1]:
             for i, face in enumerate(faces):
-                anims.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j]))
+                self.play_cube_sound((j * 6 + i) * lag_ratio / 2)
+                anims.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j], run_time=0.5))
 
-        self.play(LaggedStart(*anims))
+        self.play(LaggedStart(*anims, lag_ratio=lag_ratio))
         self.wait(2)
 
 
@@ -241,6 +244,8 @@ class FeliksVsOptimal(util.RubikScene):
             anims_cur = [cube_actual.animate.do_move(move_actual)]
             if move_best is not None:
                 anims_cur += [cube_best.animate.do_move(move_best)]
+            
+            self.play_cube_sound()
             self.play(*anims_cur, run_time=(10 / (15 + i)))
 
             counter_actual.set_value(i + 1).set_color(GRAY)
