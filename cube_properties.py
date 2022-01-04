@@ -467,6 +467,7 @@ class FriendshipGraph(util.RubikScene):
         Pak Feliks zmizi a misto nej bude Grant Sanderson, s tim
         ze se taky zvysi pocet intermediaries.
         """
+        self.next_section(skip_animations=False)
         N = 50
 
         # re-generate graph until
@@ -509,11 +510,6 @@ class FriendshipGraph(util.RubikScene):
                 print(f"{attempts} unsuccessful attempts")
 
 
-        # construct the graph object
-        # icons2 = {}
-        # for i in range(N):
-        #     icons2[i] = ImageMobject("img/icon.png")
-
         ganim = Graph(
             vertices,
             edges,
@@ -529,7 +525,7 @@ class FriendshipGraph(util.RubikScene):
             positions[i] = np.array([ganim.vertices[i].get_center()[0]*1.2, ganim.vertices[i].get_center()[1], 0.0])
 
         positions[0] += 0.3*RIGHT
-        positions[7] += 1*LEFT + 1*UP
+        positions[7] += 1.2*LEFT + 2*UP
         positions[27] += 2*LEFT + 1*DOWN
         positions[45] += 0.5*RIGHT + 0.5*DOWN
         positions[31] += 1*LEFT + 1*DOWN
@@ -538,33 +534,38 @@ class FriendshipGraph(util.RubikScene):
         positions[33] += 0.2*(RIGHT + DOWN)
         positions[24] += 0.5 * DOWN
         positions[15] += 0.3*(DOWN + LEFT)
-        positions[21] += 0.8*(DOWN + RIGHT)
+        positions[21] += 0.8*(DOWN + RIGHT)+0.1*RIGHT
         positions[38] += 0.8*(LEFT)+0.4*UP
         positions[20] += 0.4*(LEFT + UP)
-        positions[14] += 0.4*(LEFT + UP)
-
+        positions[14] += 0.4*(UP)
+        positions[17] += 0.2*(UP)
+        positions[25] += 0.2*(DOWN)
+        positions[9] += 0.8*(UP)
+        positions[48] += 0.4*(UP)
+        positions[2] += 0.3*(RIGHT)
 
 
         ganim.change_layout(positions)
 
         ganim.scale_to_fit_height(6.7)
-        ganim.move_to(RIGHT * 2)
+        #ganim.move_to(RIGHT * 2)
 
 
-        text_scale = 1.8
+        text_scale = 1
         steps_tex = (
             Tex("Steps: 0", color=GRAY)
             .scale(text_scale)
-            .next_to(ganim, direction=LEFT, buff=1)
+            .next_to(ganim, direction=LEFT, buff=0.2)
+            .shift(3*UP)
         )
 
-        ganim.move_to(ORIGIN)
+        #ganim.move_to(ORIGIN)
 
 
         # icons are separate from graph, scale to fit height does not like vertex_mobjects
         icons = []
         for i in range(N):
-            icons.append(Dot(color = GRAY).move_to(
+            icons.append(Dot(color = GRAY, z_index = 100).move_to(
                     ganim.vertices[i].get_center()
                 ))
 
@@ -574,6 +575,9 @@ class FriendshipGraph(util.RubikScene):
         # reveal graph
         self.play(
             FadeIn(ganim),
+        )
+
+        self.play(
             *[FadeIn(icon) for icon in icons]
         )
 
@@ -581,12 +585,12 @@ class FriendshipGraph(util.RubikScene):
         self.play(
             *[Transform(
                 icon,
-                Tex("$" + str(i) + "$", color = BLACK).move_to(icon.get_center())
-                # gen_icon(
-                #     height = 0.5
-                # ).move_to(
-                #     icon.get_center()
-                # )
+                # Tex("$" + str(i) + "$", color = BLACK).move_to(icon.get_center())
+                gen_icon(
+                    height = 0.5
+                ).move_to(
+                    icon.get_center()
+                )
             ) for i, icon in enumerate(icons)]
         )
         self.wait()
@@ -599,10 +603,11 @@ class FriendshipGraph(util.RubikScene):
         self.wait()
 
 
+        # fadein counter
         self.play(
-            ganim.animate.shift(RIGHT * 2),
-            guy.animate.shift(RIGHT * 2),
-            *[icon.animate.shift(RIGHT*2) for icon in icons],
+            # ganim.animate.shift(RIGHT * 2),
+            # guy.animate.shift(RIGHT * 2),
+            # *[icon.animate.shift(RIGHT*2) for icon in icons],
             FadeIn(steps_tex),
         )
         self.wait()
@@ -611,6 +616,9 @@ class FriendshipGraph(util.RubikScene):
         flash_color = YELLOW
 
         visited = set()
+        dots = []
+        edges = []
+        important_edges = []
         for i, (l_vertices, l_edges) in enumerate(zip(bfs_vertices, bfs_edges)):
             anims = []
 
@@ -618,18 +626,20 @@ class FriendshipGraph(util.RubikScene):
                 steps_tex2 = (
                     Tex(f"Steps: {i}", color=GRAY)
                     .scale(text_scale)
-                    .align_to(steps_tex, direction=LEFT)
+                    .move_to(steps_tex.get_center())
                 )
                 anims.append(steps_tex.animate.become(steps_tex2))
 
                 for v in l_vertices:
+                    d = Dot(
+                        ganim.vertices[v].get_center(),
+                        color=highlight_color,
+                        z_index=1000,
+                    )
+                    dots.append(d)
                     anims.append(
                         FadeIn(
-                            Dot(
-                                ganim.vertices[v].get_center(),
-                                color=highlight_color,
-                                z_index=10,
-                            )
+                            d
                         )
                     )
                     anims.append(
@@ -657,18 +667,187 @@ class FriendshipGraph(util.RubikScene):
                         start, end = end, start
 
                     if not e[0] in visited or not e[1] in visited:
-                        anims.append(Create(Line(start, end, color=highlight_color)))
+                        line = Line(
+                            start, 
+                            end, 
+                            color=highlight_color,
+                            z_index = 0
+                        )
+                        if (e[0] == 0 and e[1] == 35)\
+                            or (e[0] == 22 and e[1] == 27)\
+                            or (e[0] == 27 and e[1] == 35):
+                            important_edges.append(line)
+                        else:
+                            edges.append(line)
+                        anims.append(Create(line))
                         visited.add(e[0])
                         visited.add(e[1])
 
                 if i > 0:
                     self.play_bfs_sound(time_offset=0.2)
-                self.play(*anims)
+                
+                
+                self.play(
+                    *anims,
+                    *[icon.animate.shift(0.0*UP) for icon in icons]
+                )
 
         self.wait()
 
+        # reveal feliks
 
-def gen_icon(color = BLUE, height = 1):
+        self.play(
+            icons[22].animate.scale(0.0)
+        )
+        feliks = ImageMobject(
+            "img/feliks.png"
+        )
+        feliks.scale_to_fit_height(0.001).move_to(icons[22].get_center())
+        self.play(
+            feliks.animate.scale_to_fit_height(guy.get_height())
+        )
+        self.wait()
+
+
+        #highlight path
+        newheight = 0.75
+        self.play(
+            icons[35].animate.scale_to_fit_height(newheight),
+            icons[27].animate.scale_to_fit_height(newheight),
+        )
+        self.wait()
+
+        #remove graph
+        self.play(
+            FadeOut(ganim),
+            *[FadeOut(dot) for dot in dots],
+            *[Uncreate(edge) for edge in edges],
+            *[Uncreate(icon) for icon in icons[0:27]+icons[28:35]+icons[36:50]],
+            Unwrite(steps_tex)
+        )
+        self.wait()
+
+        self.next_section(skip_animations=False)
+
+        left_pos = 5.5*LEFT
+        right_pos = 5.5*RIGHT
+        right_mid_pos = (left_pos + 2*right_pos)/3
+        left_mid_pos = (2*left_pos + right_pos)/3
+
+        icon1 = icons[35]
+        icon2 = icons[27]
+        line1, line2, line3 = important_edges
+        line1.generate_target()
+        line1.target = Line(left_pos, left_mid_pos, color = highlight_color)
+        line2.generate_target()
+        line2.target = Line(left_mid_pos, right_mid_pos, color = highlight_color)
+        line3.generate_target()
+        line3.target = Line(right_mid_pos, right_pos, color = highlight_color)
+        
+        # straighten the path
+        diagram_height = 1.5
+        self.play(
+            guy.animate.move_to(left_pos).scale_to_fit_height(diagram_height),
+            feliks.animate.move_to(right_pos).scale_to_fit_height(diagram_height),
+            icon1.animate.move_to(left_mid_pos).scale_to_fit_height(diagram_height),
+            icon2.animate.move_to(right_mid_pos).scale_to_fit_height(diagram_height),
+            MoveToTarget(line1),
+            MoveToTarget(line2),
+            MoveToTarget(line3),
+        )
+        self.wait()
+
+        # make six icons
+        icons6 = [icon1, icon1.copy(), icon1.copy(), 
+            icon2, icon2.copy(), icon2.copy()]
+
+        self.play(
+            *[
+                icon.animate.move_to( 
+                    ((6-i)*left_pos + (i+1)*right_pos)    /    7.0
+                )
+                for i, icon in enumerate(icons6)
+            ]
+        )
+        self.wait()
+
+        # change feliks to grant
+        grant = ImageMobject("img/grant.png").scale_to_fit_height(0.001).move_to(feliks.get_center())
+
+        self.play(
+            feliks.animate.scale(0.001)
+        )
+        self.remove(
+            feliks
+        )
+        self.play(
+            grant.animate.scale_to_fit_height(guy.get_height())
+        )
+        self.wait()
+
+        brace_shift = 1.3*DOWN
+        brace = Brace(Group(Dot(icons6[0].get_center()), Dot(icons6[5].get_center())), DOWN, color = GRAY).shift(brace_shift)
+        txt = (
+            Tex(r"$6$ degrees of separation", color = GRAY)
+            .move_to(brace.get_center())
+            .next_to(brace, DOWN)
+        )
+        
+        self.play(
+            Create(brace),
+            Write(txt)
+        )
+        self.wait()
+
+        # change to 4
+        icons4 = icons6[0:2] + icons6[4:6]
+        self.play(
+            Uncreate(icons6[2]),
+            Uncreate(icons6[3]),
+        )
+        for i, icon in enumerate(icons4):
+            icon.generate_target()
+            icon.target.move_to(
+                ((4-i)*left_pos + (i+1)*right_pos) / 5.0
+            )
+        brace.generate_target()
+        brace.target = Brace(Group(Dot(icons6[0].target.get_center()), Dot(icons6[5].target.get_center())), DOWN, color = GRAY).shift(brace_shift)
+        newtxt = Tex(r"$4$ degrees of separation", color = GRAY).move_to(txt.get_center())
+        fbtxt = Tex("(on Facebook)", color = GRAY).move_to(txt.get_center()).next_to(txt, DOWN)
+        self.play(
+            *[MoveToTarget(icon) for icon in icons4],
+            MoveToTarget(brace),
+            Transform(txt, newtxt),
+            Write(fbtxt)
+            #txt.animate.become(newtxt)
+        )
+
+        # labels above icons
+        nums = [
+            r"1",
+            r"100",
+            r"10\,000",
+            r"1\,000\,000",
+            r"100\,000\,000",
+            r"1\,000\,000\,000",
+        ]
+        labels = [
+            (
+                Tex(r"$" + num + "$", color = GRAY)
+                .move_to(obj.get_center())
+                .next_to(obj, UP, buff=0.5)
+                .shift((i % 2) * 0.5 * UP)
+            )
+            for i, (num, obj) in enumerate(zip(nums, [guy] + icons4 + [grant]))
+        ]
+
+        self.play(
+            AnimationGroup(*[Write(label) for label in labels], lag_ratio = 1)
+        )
+        self.wait(2)
+
+
+def gen_icon(color = BLUE, height = 1, z_index = 100):
     pnts = [
         np.array([407.837, 313.233, 0.0]),
         np.array([340.843, 431.234, 0.0]),
@@ -689,7 +868,8 @@ def gen_icon(color = BLUE, height = 1):
 
         ],
         fill_color = color,
-		fill_opacity = 1
+		fill_opacity = 1,
+        z_index = z_index
     ).move_to(
         0*DOWN
     ).scale_to_fit_height(
