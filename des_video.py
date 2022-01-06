@@ -7,6 +7,7 @@ import math
 import textwrap
 import random
 from solarized import *
+from tqdm import tqdm
 
 # Use our fork of manim_rubikscube!
 from manim_rubikscube import *
@@ -65,7 +66,13 @@ def flatten(t):
 	return [item for sublist in t for item in sublist]
 
 # constructing random strings inside keys and ciphertexts
+rng_state_1 = random.getstate()
+
 def constructRandomString(lineLen = 8, numLines = 6):
+	global rng_state_1
+	old_state = random.getstate()
+	random.setstate(rng_state_1)
+
 	letters = string.ascii_letters + string.digits
 	strList = []
 	for j in range(numLines):
@@ -74,6 +81,9 @@ def constructRandomString(lineLen = 8, numLines = 6):
 			str += random.choice(letters)
 		strList.append(str)
 	strList[-1] = strList[-1][:-3] + "..."
+
+	rng_state_1 = random.getstate()
+	random.setstate(old_state)
 	return strList
 
 strPlainText = [
@@ -86,7 +96,13 @@ strPlainText = [
 ]
 strCipherText = constructRandomString()
 
+rng_state_2 = random.getstate()
+
 def constructRandomKeyString(len1 = 3, len2 = 5, prefix = None, suffix = None):
+	global rng_state_2
+	old_state = random.getstate()
+	random.setstate(rng_state_2)
+
 	st = ""
 	if prefix is None:
 		for _ in range(len1):
@@ -99,7 +115,11 @@ def constructRandomKeyString(len1 = 3, len2 = 5, prefix = None, suffix = None):
 			st += random.choice(["0", "1"])
 	else:
 		st += ('{0:0'+str(len2)+'b}').format(suffix)
+
+	rng_state_2 = random.getstate()
+	random.setstate(old_state)
 	return st
+
 zeroString = "000...00000"
 oneString = "000...00001"
 ourKeyString = "101...01110"
@@ -1302,9 +1322,8 @@ class DesMITM(Scene):
 		This comparison can be done very quickly if you put the strings you computed in a hash table. 
 		You are again iterating over all 2^56 possible keys, until you find the decrypted string in the database, 
 		which gives you the two keys used in the cipher. 
-
 		"""
-		
+
 		# beginning of the scene
 		self.next_section(skip_animations=False)
 
@@ -1328,7 +1347,6 @@ class DesMITM(Scene):
 		)
 		self.play(
 			plain.create(tag = True, tagStr="plain text"),
-			run_time = 0.001
 		)
 		self.wait()
 
@@ -1340,7 +1358,6 @@ class DesMITM(Scene):
 		)
 		self.play(
 			cipher.create(tag = True, tagStr="cipher text"),
-			run_time = 0.001
 		)		
 		self.wait()
 
@@ -1363,9 +1380,6 @@ class DesMITM(Scene):
 		w = 10
 		h = 6
 
-		# w = 2
-		# h = 5
-
 		for i in range(h):
 			for j in range(w):
 				databasePositions.append(topLeft + i * 0.7 * DOWN + j * 0.3 * RIGHT)
@@ -1381,7 +1395,9 @@ class DesMITM(Scene):
 		self.wait()
 
 		anims = []
-		for it, (pos, keyString) in enumerate(zip(databasePositions, keyStrings)):
+		cum_time = 0
+
+		for it, (pos, keyString) in tqdm(list(enumerate(zip(databasePositions, keyStrings)))):
 			curInter = Btext( 
 				#strPlainText,
 				constructRandomString(),
@@ -1393,7 +1409,7 @@ class DesMITM(Scene):
 			)
 			databaseInters.append(curInter)
 
-			anims.append(Succession(
+			anim = Succession(
 				AnimationGroup(
 					curInter.create(),
 					run_time = 0.01
@@ -1412,17 +1428,18 @@ class DesMITM(Scene):
 					),
 					lag_ratio = 0.0
 				)
-			))
+			)
+			anims.append(anim)
+
+			if it % 2 == 0:
+				self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cum_time)
+			cum_time += minTime * anim.run_time
 
 		self.play(AnimationGroup(
 			*anims, 
 			lag_ratio = minTime
 		))
 		self.wait()
-
-		self.next_section(skip_animations=False)
-
-
 
 		self.next_section(skip_animations=False)
 
@@ -1494,6 +1511,7 @@ class DesMITM(Scene):
 		for t in waitingTimes[:L]:
 			actString = "000..." + '{0:05b}'.format((cnt % 32))
 
+			self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cumTimes[cnt])
 			anims.append(
 				Succession(
 					Wait(cumTimes[cnt]), 
@@ -1513,6 +1531,8 @@ class DesMITM(Scene):
 				actString = '{0:03b}'.format(big) + "..."
 				for _ in range(5):
 					actString += random.choice(["0", "1"])
+				
+				self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cumTimes[cnt])
 				anims.append(
 					Succession(
 						Wait(cumTimes[cnt]), 
@@ -1555,9 +1575,7 @@ class DesMITM(Scene):
 			)
 		)
 
-		self.play(
-			*anims
-		)
+		self.play(*anims)
 		self.wait()
 
 		#fade in the correct text
@@ -1595,6 +1613,7 @@ class DesMITM(Scene):
 		self.wait()
 
 
+		self.add_sound("audio/polylog_success.wav")
 		self.play(
 			Circumscribe(inter.border),
 			Circumscribe(inter2.border)
@@ -2031,4 +2050,3 @@ def constructKey(position = np.array([0, 0, 0]), granularity = 100, width = 1, c
 		return Polygon(*key, fill_opacity = 1, color = color[0]), \
 			Polygon(*keyline, color = color[1]), \
 			Circle(radius = radcirc, color = color[1]).move_to(midcirc)
-
