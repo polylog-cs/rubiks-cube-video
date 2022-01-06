@@ -987,6 +987,7 @@ class DesBruteForce(Scene):
 		for t in waitingTimes[1:L]:
 			actString = "000..." + '{0:05b}'.format((cnt % 32))
 		
+			self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cumTimes[cnt]- cumTimes[1])
 			anims.append(
 				Succession(
 					Wait(cumTimes[cnt]- cumTimes[1]), 
@@ -1006,6 +1007,8 @@ class DesBruteForce(Scene):
 				actString = '{0:03b}'.format(big) + "..."
 				for _ in range(5):
 					actString += random.choice(["0", "1"])
+
+				self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cumTimes[cnt]- cumTimes[1])
 				anims.append(
 					Succession(
 						Wait(cumTimes[cnt] - cumTimes[1]), 
@@ -1022,6 +1025,7 @@ class DesBruteForce(Scene):
 
 		# we found the correct key
 
+		self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cumTimes[cnt]- cumTimes[1])
 		anims.append(
 			Succession(
 				Wait(cumTimes[cnt] - cumTimes[1]),
@@ -1033,13 +1037,11 @@ class DesBruteForce(Scene):
 			)
 		)
 
-	
-
 		self.play(
 			*anims
 		)
 
-
+		self.add_sound("audio/polylog_success.wav")
 		self.play(
 			Circumscribe(guess.border),
 			Circumscribe(cipher.border)
@@ -1431,8 +1433,7 @@ class DesMITM(Scene):
 			)
 			anims.append(anim)
 
-			if it % 2 == 0:
-				self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cum_time)
+			self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav", time_offset=cum_time)
 			cum_time += minTime * anim.run_time
 
 		self.play(AnimationGroup(
@@ -1627,7 +1628,6 @@ class DesMITM(Scene):
 			Unwrite(databaseBraceText),
 			Uncreate(databaseBrace)
 		)
-		self.wait()
 
 		self.play(
 			inter.move_to((plain.position + cipher.position)/2),
