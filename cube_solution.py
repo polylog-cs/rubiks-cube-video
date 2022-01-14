@@ -116,10 +116,6 @@ class BFSOneSide(util.RubikScene):
 
         Ukázat slupky z obou stran, musí se protínat
 
-        TODO: kdyby se neprotinaly: dat kostky dal od sebe, ukazat "pravitko"
-        co ukaze ze vzdalenost je '>20'
-
-        TODO: akordiky na fadeout/překryv?
         """
         base_radius = 0.9
         radius_step = 0.3
@@ -143,7 +139,7 @@ class BFSOneSide(util.RubikScene):
         circle_anims_from = BFSCircleAnimations(
             cube_from.get_center(),
             n_steps,
-            label_angle=15 * DEGREES,
+            label_angle=-15 * DEGREES,
             base_radius=base_radius,
             radius_step=radius_step,
         )
@@ -211,7 +207,8 @@ class BFSOneSide(util.RubikScene):
 
         circle_anims_from.circles[n_steps_small - 1].set_color(RED)
 
-        circle_anims_from.label.become(MathTex(str(n_steps_small), color=RED))
+        new_label = MathTex(str(n_steps_small), color=RED)
+        circle_anims_from.label.become(new_label)
         circle_anims_from.circle.become(circle_anims_from.circles[n_steps_small - 1])
 
         self.play(
@@ -223,6 +220,7 @@ class BFSOneSide(util.RubikScene):
         left_group = Group(
             circle_anims_from.circles[n_steps_small - 1],
             circle_anims_from.label,
+            # new_label,
             cube_from,
         )
         right_group = Group(
@@ -231,15 +229,29 @@ class BFSOneSide(util.RubikScene):
             cube_to,
         )
 
+        circle_anims_from.label.clear_updaters()
         self.play(left_group.animate.shift(LEFT), right_group.animate.shift(RIGHT))
         self.wait()
-        # TODO dokoncit?
+
+        brace = Brace(
+            Group(Dot(cube_from.get_center()), Dot(cube_to.get_center())),
+            direction=UP,
+            color=GRAY,
+        ).shift(UP)
+        brace_text = MathTex(">20", color=GRAY).next_to(brace, direction=UP)
+        self.play(Create(brace), Create(brace_text))
+
+        self.wait()
 
         self.play(
             FadeOut(circle_anims_from.circles[n_steps_small - 1]),
             FadeOut(circle_anims_from.label),
             FadeOut(circle_anims_to.circles[n_steps_small - 1]),
             FadeOut(circle_anims_to.label),
+            FadeOut(brace),
+            FadeOut(brace_text),
+            cube_from.animate.shift(RIGHT),
+            cube_to.animate.shift(LEFT),
         )
         self.wait()
         # self.play(*[FadeOut(mob) for mob in self.mobjects])
@@ -311,7 +323,7 @@ class CubeMITM(util.RubikScene):
         for anims_from, anims_to in zip(path_anims_from, path_anims_to):
             self.play(*(anims_from + anims_to), run_time=1 / 3)
             self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav")
-        
+
         self.add_sound("audio/polylog_success.wav", time_offset=0.5)
 
         self.wait()

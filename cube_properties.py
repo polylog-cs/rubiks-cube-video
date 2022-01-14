@@ -24,9 +24,8 @@ class Neighborhood(util.RubikScene):
         """
         Ukázat graf stavů ze do hloubky 1, pak 2.
 
-        TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je
+        TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je?
         TODO: v druhe fazi jdou cary pres kostky
-        TODO: zvuk - stoupající akordy na rhodes?
         """
         self.next_section("First layer", skip_animations=False)
 
@@ -95,12 +94,12 @@ class Neighborhood(util.RubikScene):
                     Create(
                         Line(ORIGIN, layout[layers[1][i]], shade_in_3d=True, color=GRAY)
                     ),
-                    run_time=3,
+                    run_time=0.5
                 )
             )
+            self.play_cube_sound(time_offset=i * 0.1) # = run_time * lag_ratio
 
-        self.play_bfs_sound()
-        self.play(LaggedStart(*anims, lag_ratio=0.01), q[0].animate.shift(10 * OUT))
+        self.play(LaggedStart(*anims, lag_ratio=0.2), q[0].animate.shift(10 * OUT))
         anims = []
 
         for u, v in edges:
@@ -147,8 +146,11 @@ class Neighborhood(util.RubikScene):
                             stroke_width=2,
                         )
                     ),
+                    run_time=0.5,
                 )
             )
+            if i % 3 == 0:
+                self.play_cube_sound(time_offset=i*0.005)
             # self.add(cube)
 
         for cube in cubes1 + [q[0]]:
@@ -156,8 +158,7 @@ class Neighborhood(util.RubikScene):
             self.bring_to_front(cube)
             anims.append(cube.animate.shift(ORIGIN))
 
-        self.play_bfs_sound()
-        self.play(LaggedStart(*anims, lag_ratio=0.001))
+        self.play(LaggedStart(*anims, lag_ratio=0.01))
         self.wait()
 
         anims = []
@@ -463,11 +464,6 @@ class FriendshipGraph(util.RubikScene):
         Again, this is because, intuitively, the number of people reached is
         always multiplied by something like 50-100 in every step, since the
         average person has around 100 friends.
-
-        TODO: po BFS zvyraznit cestu mezi excited typkem a Feliksem,
-        pak nechat zmizet zbytek grafu, ukazat jen "rovnou" cestu.
-        Pak Feliks zmizi a misto nej bude Grant Sanderson, s tim
-        ze se taky zvysi pocet intermediaries.
         """
         self.next_section(skip_animations=False)
         N = 50
