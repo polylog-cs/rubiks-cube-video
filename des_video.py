@@ -640,9 +640,9 @@ class DesIntro(Scene):
 		
 		# DES -> Data Encryption Standard
 		DesTextPosition = 3*UP
-		DesText = Tex(r"DES", color = textColor)
+		DesText = Tex(r"{{D}}{{E}}{{S}}", color = textColor)
 		DesText.move_to(DesTextPosition)
-		DesTextLong = Tex(r"Data Encryption Standard", color = textColor)
+		DesTextLong = Tex(r"{{Data }}{{Encryption }}{{Standard}}", color = textColor)
 		DesTextLong.move_to(DesTextPosition)
 		DesTextShort = DesText.copy()
 
@@ -665,9 +665,9 @@ class DesIntro(Scene):
 		self.play(Transform(DesText, DesTextLong))
 		self.wait()
 		self.play(Transform(DesText, DesTextShort))
+		self.wait()
 
-
-		
+		return
 
 		# first key occurence
 		key = Key(ourKeyString, clipartWidth = keyWidthLarge)
@@ -1057,8 +1057,8 @@ class TripleDes(Scene):
 		self.next_section(skip_animations=False)
 
 		DesTextPosition = 3*UP
-		DesText = Tex(r"DES", color = textColor).move_to(DesTextPosition)
-		TripleDes = Tex(r"Triple DES", color = textColor).move_to(DesTextPosition)
+		DesText = Tex(r"{{ }}{{DES}}", color = textColor).move_to(DesTextPosition)
+		TripleDes = Tex(r"{{Triple }}{{DES}}", color = textColor).move_to(DesTextPosition)
 		
 		self.add(DesText)
 
@@ -1161,7 +1161,7 @@ class TripleDes(Scene):
 
 		#triple des -> double des
 
-		DoubleDes = Tex(r"Double DES", color = textColor).move_to(DesTextPosition)
+		DoubleDes = Tex("{{Double }}{{DES}}", color = textColor).move_to(DesText.get_center()+0.05*UP)
 
 		txtShift = ciphers[1].border.get_center()[0]*RIGHT
 		recShift = topKeys[1].border.get_center() - topKeys[1].border.get_left()

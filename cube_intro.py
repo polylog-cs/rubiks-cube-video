@@ -11,11 +11,6 @@ from solarized import *
 import util
 
 
-cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
-
-#https://colorswall.com/palette/171
-# TODO vyrenderovat s těmahle barvama aspoň jednu kostku někde
-# cube.DEFAULT_CUBE_COLORS = ["#ffffff", "#b71234", "#009b48", "#ffd500", "#ff5800", "#0046ad"]
 
 
 class Logo(ThreeDScene):
