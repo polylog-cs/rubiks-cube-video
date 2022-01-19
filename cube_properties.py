@@ -17,16 +17,16 @@ except ImportError:
     trange = range
 
 
+
 class Neighborhood(util.RubikScene):
     def construct(self):
         """
         Ukázat graf stavů ze do hloubky 1, pak 2.
-
         TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je?
         TODO: v druhe fazi jdou cary pres kostky
         """
         self.next_section("First layer", skip_animations=False)
-        
+
         edges = set()
         q = [RubiksCube(cubie_size=0.2)]
         seen = set([q[0].hash()])
@@ -69,17 +69,11 @@ class Neighborhood(util.RubikScene):
 
         layout = {layers[0][0]: ORIGIN}
 
-        # compute positions of the cubes
         for li, layer in enumerate(layers[1:]):
             for i, h in enumerate(layer):
                 distance = (li + 1) * 3
                 pos = distance * UP * np.sin(2 * PI * i / len(layer))
                 pos += distance * RIGHT * np.cos(2 * PI * i / len(layer))
-                if li == 1:
-                    if i % 2 == 0:
-                        pos *= 1.05
-                    else:
-                        pos /= 1.05
                 layout[h] = pos
 
         print(f"Done with BFS, {len(seen)} vertices")
@@ -131,7 +125,7 @@ class Neighborhood(util.RubikScene):
             # )
 
             def f(cube):
-                return cube.move_to(layout[cube.hash()]).set_stroke_width(0).scale(0.4)
+                return cube.move_to(layout[cube.hash()]).set_stroke_width(0).scale(0.2)
 
             cube.move_to(layout[parents[h]])
             cube.shift(IN * 10)
