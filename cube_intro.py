@@ -374,7 +374,7 @@ class NumberOfStates2(Scene):
         )
         num_big_apx = MathTex(
             r"{{43}}{{\,252\,003\,274\,489\,856\,000}}{{ \;\,\;  \approx \;\,\; 10^{20} }}",
-            color = GRAY, # TODO proc se to rozbije kdyz tam neni carka
+            color = GRAY, 
             font_size = font_size
         )
         self.play(
@@ -518,24 +518,6 @@ class NumberOfStates2(Scene):
 
         # change 20 -> 10
 
-        # fractions_strings2 = [
-        #     r"{{ \frac{10^{\color{red}10 }\textrm{ states} }{10^6 \textrm{ states / s} } }}{{ = 10^{14} \textrm{ s} }}{{ \approx 3}}{{ \cdot 10^6 \textrm{ years} }}",
-        # ]
-        # fractions2 = [
-        #     MathTex( 
-        #         str,
-        #         color = GRAY,
-        #         font_size = font_sizes[0]
-        #     ).align_to(
-        #         fractions[-1],
-        #         LEFT
-        #     ).align_to(
-        #         fractions[-1],
-        #         DOWN
-        #     )
-        #     for str in fractions_strings2
-        # ]
-
         newfrac = MathTex( 
             *[
                 r"{ 10^", 
@@ -577,4 +559,3 @@ class NumberOfStates2(Scene):
             Unwrite(tens[1])
         )
         self.wait()
-        # TODO pridat barvicky

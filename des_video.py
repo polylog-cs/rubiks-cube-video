@@ -13,7 +13,7 @@ from tqdm import tqdm
 from manim_rubikscube import *
 
 # Temne pozadi, ale zakomentovat pro DesIntro a GeneralMITM !!!
-config.background_color = BASE02
+# config.background_color = BASE02
 
 
 random.seed(0)
@@ -1694,19 +1694,21 @@ class GeneralMITM(ThreeDScene):
 		# first split screen
 		self.next_section(skip_animations=False)
 
-		eps = 0.01
 		backgroundRect = Rectangle(
-			height = 8 + eps,
-			width = 14.2 + eps,
+			height = 8,
+			width = 14.2,
 			fill_opacity = 1,
 			fill_color = BASE02,
 			color = BASE02, 	
-		)
-		#backgroundRect.z_index = -1
+		) 
+		#backgroundRect.z_index = -100
 		
 		backgroundRect.generate_target()
+		# backgroundRect.move_to(
+		# 	(14.2 * 1.5 / 2 + 14.2/2)*LEFT + 100*OUT
+		# )
 		backgroundRect.target.move_to(
-			(14.2+2*eps)*RIGHT/2
+			(14.2 / 2)*RIGHT
 		)
 
 		self.play(
@@ -1899,12 +1901,60 @@ class GeneralMITM(ThreeDScene):
 				for strList in desTexts[0:1] + desTexts[2:4] + cubeTexts[0:1] + cubeTexts[2:4]
 			]
 		)
-
-
-
-
 		self.wait()
 
+		# uncreate everything
+
+		anims = []
+		for text in desTexts + cubeTexts:
+			for t in text:
+				anims.append(Unwrite(t))
+
+		self.play(
+			*anims,
+			*[t.remove() for t in [plain, inter, cipher]],
+			*[Uncreate(key) for key in [key1, key2]],
+			FadeOut(cube)
+		)
+		self.wait()
+
+		# final thanks
+		channel_name = Tex(r"polylog", color=textColor)
+		channel_name.scale(3).shift(2 * UP).shift(14.2 * LEFT)
+
+		thanks = [
+			Tex(str, color = textColor)
+			for str in [
+				r"Big thanks to: 3blue1brown \& Manim community",
+				"people",
+				"people"
+			]
+		]
+		thanks_group = Group(*thanks).arrange(DOWN).shift(14.2 * LEFT)
+		for t in thanks:
+			t.align_to(thanks[0], LEFT)
+		self.add(
+			*thanks,
+			channel_name
+		)
+		# shift to the screen
+		self.play(
+			*[o.animate.shift(14.2 * RIGHT) for o in 
+				[
+					backgroundRect,
+					thanks_group,
+					channel_name
+				]
+			]
+		)
+
+		self.wait()
+		self.play(
+			*[
+				Unwrite(t) for t in thanks
+			]
+		)
+		self.wait()
 
 
 def constructTextBorder(insideObject = None, position = np.array([0, 0, 0]), width = None, height = None, color = borderColor, fill_color = None, fill_opacity = 0.0):
