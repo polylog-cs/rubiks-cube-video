@@ -146,15 +146,10 @@ class HighlightCubeGraph(util.RubikScene):
 
         self.next_section(skip_animations=False)
 
-        houses = [
-            gen_house(height = 0.7).move_to(c.get_center())
-            for c in cubes_on_scene
-        ]
+        houses = [gen_house(height=0.7).move_to(c.get_center()) for c in cubes_on_scene]
 
-        icons = [
-            gen_icon(height = 0.7).move_to(c.get_center()) for c in cubes_on_scene
-        ]
-        
+        icons = [gen_icon(height=0.7).move_to(c.get_center()) for c in cubes_on_scene]
+
         infty = 10000.0
         for c, house, icon in zip(cubes_on_scene, houses, icons):
             house.width = icon.width = c.width
@@ -240,25 +235,27 @@ class BFSCubeGraph(util.RubikScene):
             for v in shortest_path
         ]
 
-        for o in circles:
-            o.set_z_index(-100)
-        for e in edges:
-            g.edges[e].set_z_index(-100)
-
-        self.play( # TODO prestal fungovat z-index
-            AnimationGroup(
-                g.edges[edges[3]].animate.set_color(RED),
-                GrowFromCenter(circles[3]),
-                g.edges[edges[2]].animate.set_color(RED),
-                GrowFromCenter(circles[2]),
-                g.edges[edges[1]].animate.set_color(RED),
-                GrowFromCenter(circles[1]),
-                g.edges[edges[0]].animate.set_color(RED),
-                lag_ratio = 0.5
-            )
+        self.play(
+            g.edges[edges[3]].animate.set_color(RED),
+            GrowFromCenter(circles[3]),
+            run_time=0.75,
+        )
+        self.play(
+            g.edges[edges[2]].animate.set_color(RED),
+            GrowFromCenter(circles[2]),
+            run_time=0.75,
+        )
+        self.play(
+            g.edges[edges[1]].animate.set_color(RED),
+            GrowFromCenter(circles[1]),
+            run_time=0.75,
+        )
+        self.play(
+            g.edges[edges[0]].animate.set_color(RED),
+            run_time=0.75,
         )
         self.wait()
-        return 
+
         self.play(
             *[g.edges[e].animate.set_color(GRAY) for e in edges],
             *[ShrinkToCenter(circle) for circle in circles],
@@ -442,7 +439,8 @@ def get_graph():
 
     return n_nodes, edges, anims_to_do, g
 
-def gen_house(color = RED, height = 1, z_index = 100):
+
+def gen_house(color=RED, height=1, z_index=100):
     pnts = [
         np.array([232.535, 333.808, 0.0]),
         np.array([277.698, 333.811, 0.0]),
@@ -466,23 +464,16 @@ def gen_house(color = RED, height = 1, z_index = 100):
         np.array([232.549, 333.833, 0.0]),
     ]
 
-    house = Polygon(
-        *pnts,
-        color = color,
-        fill_color = color,
-		fill_opacity = 1,
-        z_index = z_index
-    ).move_to(
-        0*DOWN
-    ).scale_to_fit_height(
-        height
+    house = (
+        Polygon(*pnts, color=color, fill_color=color, fill_opacity=1, z_index=z_index)
+        .move_to(0 * DOWN)
+        .scale_to_fit_height(height)
     )
 
-    return house   
+    return house
 
 
-
-def gen_icon(color = BLUE, height = 1, z_index = 100):
+def gen_icon(color=BLUE, height=1, z_index=100):
     pnts = [
         np.array([407.837, 313.233, 0.0]),
         np.array([340.843, 431.234, 0.0]),
@@ -491,24 +482,23 @@ def gen_icon(color = BLUE, height = 1, z_index = 100):
         np.array([187.414, 311.624, 0.0]),
     ]
 
-    icon = ArcPolygon(
-        *pnts,
-        color = color,
-        arc_config = [
-            { 'radius': 119.256, 'color': color},
-            { 'radius': 70.9444, 'color': color},
-            { 'radius': 70.9444, 'color': color},
-            { 'radius': 119.256, 'color': color},
-            { 'radius': 216.488, 'color': color},
-
-        ],
-        fill_color = color,
-		fill_opacity = 1,
-        z_index = z_index
-    ).move_to(
-        0*DOWN
-    ).scale_to_fit_height(
-        height
+    icon = (
+        ArcPolygon(
+            *pnts,
+            color=color,
+            arc_config=[
+                {"radius": 119.256, "color": color},
+                {"radius": 70.9444, "color": color},
+                {"radius": 70.9444, "color": color},
+                {"radius": 119.256, "color": color},
+                {"radius": 216.488, "color": color},
+            ],
+            fill_color=color,
+            fill_opacity=1,
+            z_index=z_index,
+        )
+        .move_to(0 * DOWN)
+        .scale_to_fit_height(height)
     )
 
     return icon
