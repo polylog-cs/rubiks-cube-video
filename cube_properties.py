@@ -16,14 +16,12 @@ try:
 except ImportError:
     trange = range
 
-cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
 class Neighborhood(util.RubikScene):
     def construct(self):
         """
         Ukázat graf stavů ze do hloubky 1, pak 2.
-
         TODO: ve vnejsi vrstve dat nektere kostky bliz, zvetsit je?
         TODO: v druhe fazi jdou cary pres kostky
         """
@@ -275,6 +273,8 @@ class NeighborCount(util.RubikScene):
         nodes seen will be around 10^5. Again, it’s actually about 6 times
         larger, but close enough.
         """
+        font_size = 40
+        smaller_font_size = 40
         self.next_section("Table", skip_animations=False)
 
         table_group = Group()
@@ -294,8 +294,11 @@ class NeighborCount(util.RubikScene):
         table = [[r"\textbf{Steps}", r"\textbf{Explored}"]]
         table += [[with_thousand_separator(x) for x in row] for row in table_values]
         table += [["$n$", r"$\sim 10^n$"]]
+        table += [[r"$20$", r"$\sim 10^{20}$"]]
 
-        table = [[Tex(x, color=GRAY) for x in row] for row in table]
+        table = [[Tex(x, color=GRAY, font_size = font_size) for x in row] for row in table]
+
+        dots = Group(*[Tex(r"$\vdots$", color = GRAY, font_size = font_size) for _ in range(2)])
 
         for row in table:
             table_group.add(*row)
@@ -316,22 +319,51 @@ class NeighborCount(util.RubikScene):
 
         self.play(
             LaggedStart(
-                FadeIn(cube),
+                Succession(
+                    FadeIn(cube),
+                    Rotate(cube, 2 * PI, UP)
+                ),
                 *[Write(cell) for row in table[:7] for cell in row],
                 lag_ratio=0.1,
             )
         )
-        # self.play(
-        #     *[AnimationGroup(*[Write(cell) for cell in row]) for row in table_tex[:7]],
-        # )
         self.wait()
 
+        for cell in table[-2]:
+            cell.set_color(RED).shift(MED_SMALL_BUFF * DOWN / 2)
         for cell in table[-1]:
-            cell.set_color(RED).shift(MED_SMALL_BUFF * DOWN)
+            cell.shift(MED_SMALL_BUFF * DOWN)
 
-        self.play(LaggedStart(*[Write(cell) for cell in table[-1]], lag_ratio=0.1))
+
+        # 20 and 10^20 + dots
+        dots[0].move_to(
+            (
+                table[-3][0].get_right()
+                +table[-3][1].get_left()
+                +table[-1][0].get_right()
+                +table[-1][1].get_left()
+            )/4
+        )
+        self.play(
+            Write(dots[0]),
+            LaggedStart(*[Write(cell) for cell in table[-1]], lag_ratio=0.1)
+        )
         self.wait()
 
+        # n and 10^n
+
+        dots[1].move_to(dots[0].get_center())
+        eps = 0.4
+        self.play(
+            dots[0].animate().shift(eps * UP).scale(0.5),
+            dots[1].animate().shift(eps * DOWN).scale(0.5)
+        )
+        self.play(
+            LaggedStart(*[Write(cell) for cell in table[-2]], lag_ratio=0.1)
+        )
+        self.wait()
+
+        # dark rectangle slides
         self.next_section("Manhattan comparison", skip_animations=False)
 
         background_rect = Rectangle(
@@ -354,15 +386,17 @@ class NeighborCount(util.RubikScene):
                 / 4
                 * LEFT
             ),
-            rubiks_group.animate.shift(RIGHT * 14.2 / 4),
+            Group(rubiks_group, *[dots]).animate.shift(RIGHT * 14.2 / 4),
             run_time=2,
         )
 
         self.wait()
 
+        #grid graph
+
         grid_size = 13
         grid_center = grid_size // 2
-        grid_spacing = 0.35
+        grid_spacing = 0.3 #0.35
 
         vertices = set((i, j) for i in range(grid_size) for j in range(grid_size))
         distances = {}
@@ -407,12 +441,43 @@ class NeighborCount(util.RubikScene):
                             edge = graph.edges[(((i, j), cur))]
                             anims[edge_distance + 1].append(edge.animate.set_color(RED))
 
+
+
+
+        # add table anims
+        grid_table_values = [[n, 2*n*n + 2*n + 1] for n in range(6)]
+
+        #grid_table = [[r"\textbf{Steps}", r"\textbf{Explored}"]]
+        grid_table = [[with_thousand_separator(x) for x in row] for row in grid_table_values]
+        #grid_table += [["$n$", r"$2n^2 + 2n + 1$"]]
+
+        grid_table = [[Tex(x, color=GRAY, font_size = smaller_font_size) for x in row] for row in grid_table]
+
+        grid_table_group = Group()
+        for row in grid_table:
+            grid_table_group.add(*row)
+
+        horizontal_buff2 = 0.375#0.75
+        grid_table_group.arrange_in_grid(
+            cols=2,
+            col_alignments="rl",
+            row_alignments="d" * len(table),
+            buff=(horizontal_buff2, SMALL_BUFF),
+        ).next_to(graph, direction=DOWN, buff=MED_SMALL_BUFF)
+
+        for i in range(6):
+            anims[i] += [Write(cell) for cell in grid_table[i]]
+
+
+
+
         run_time = 0.25
         lag_ratio = 0.9
 
         for it in range(len(anims)):
             offset = run_time * lag_ratio * (it + 0.5)
             self.add_sound(f"audio/bfs/bfs_{it:03d}", time_offset=offset)
+
 
         self.play(
             LaggedStart(
@@ -423,30 +488,97 @@ class NeighborCount(util.RubikScene):
 
         self.wait()
 
-        values_manhattan = [
-            [Tex(r"\textbf{Steps}", color=GRAY), Tex(r"\textbf{Explored}", color=GRAY)],
-            [MathTex("5", color=GRAY), MathTex("61", color=GRAY)],
-            [MathTex("n", color=RED), MathTex("\sim 2n^2", color=RED)],
-        ]
+
+
+
+        #the grid shifts and table is finished
+        self.next_section(skip_animations=False)
+
+        values_manhattan = [[Tex(r"\textbf{Steps}", color=GRAY, font_size = font_size), Tex(r"\textbf{Explored}", color=GRAY, font_size = font_size)]]
+        for a,b in grid_table_values:
+            values_manhattan += [[Tex(str(a), color = GRAY, font_size = font_size), Tex(str(b), color = GRAY, font_size = font_size)]]
+        values_manhattan += [[MathTex("n", color=RED, font_size = font_size), MathTex("{{2n^2}} + 2n + 1", color=RED, font_size = font_size)]]
+        
         table_manhattan = Group(*[cell for row in values_manhattan for cell in row])
         table_manhattan.arrange_in_grid(
+            cols=2,
             col_alignments="rl",
-            row_alignments="ddd",
+            row_alignments="d" * len(values_manhattan),
             buff=(horizontal_buff, MED_SMALL_BUFF),
-        )
+        ).align_to(table_group, UP).align_to(table_group, LEFT).shift(14.2/2*LEFT)
+
         for cell in values_manhattan[-1]:
             # The constant is needed because $n^2$ is taller than 10^n
-            cell.set_color(RED).shift(MED_SMALL_BUFF * DOWN * 0.6)
+            cell.set_color(RED).shift(MED_SMALL_BUFF * DOWN * 0.5)
 
-        table_manhattan.align_to(rubiks_group, DOWN).shift(14.2 / 4 * LEFT)
+
+      
+        anims = []
+        for i in range(6):
+            anims += [
+                    cell1.animate().become(cell2) 
+                    for cell1, cell2 
+                    in zip(grid_table[i], values_manhattan[i+1])
+                ]
+        anims += [Write(cell) for cell in values_manhattan[0] + values_manhattan[-1]]
+
+        #shifting manhattan        
+        avg = sum(graph._layout.values()) / len(graph._layout)
+        new_layout =  {
+            key: (pos - avg)/2 + [-14.2/4, cube.get_center()[1], 0]
+            for key, pos in graph._layout.items()
+        }
+        self.play(
+            *[dot.animate().scale(0.1) for _,dot in graph.vertices.items()]
+        )
+        self.wait()
+        self.play(
+            graph.animate().change_layout(new_layout),
+        )
+        self.wait()
+        self.play(
+            *anims
+        )
+        self.wait()
+        #change to 2n^2
+        new_text = MathTex("\\sim {{2n^2}}", color = RED, font_size = font_size).move_to(
+            values_manhattan[-1][1].get_center()
+        ).align_to(
+            values_manhattan[-1][1], LEFT
+        )
+        self.play(
+            TransformMatchingTex(
+                values_manhattan[-1][1],
+                new_text
+            )
+        )
+        self.wait()
+
+        #indicate fives
+        self.play(
+            Circumscribe(Group(*values_manhattan[6]))
+        )
+        self.wait()
+
 
         self.play(
-            LaggedStart(
-                *[Write(cell) for cell in values_manhattan[0]],
-                *[Write(cell) for cell in values_manhattan[1]],
-                *[Write(cell) for cell in values_manhattan[2]],
-                lag_ratio=0.1,
-            )
+            Circumscribe(Group(*table[6]))
+        )
+        self.wait()
+
+        self.play(
+            FadeOut(background_rect),
+            *[Unwrite(dot) for dot in dots],
+            *[Unwrite(t) for t in table_group],
+            *[(Unwrite(t) if t != values_manhattan[-1][1] else Wait(0)) for t in grid_table_group],
+            Unwrite(values_manhattan[0][0]),
+            Unwrite(values_manhattan[0][1]),
+            Unwrite(values_manhattan[-1][0]),
+            #*[AnimationGroup(Unwrite(t), Unwrite(u)) for t,u in [values_manhattan[0]] + [values_manhattan[-1]]],
+            FadeOut(cube),
+            Uncreate(graph),
+            Unwrite(new_text)
+            #*[AnimationGroup(Unwrite(t), Unwrite(u)) for t,u in [table_manhattan]],
         )
 
         self.wait()
@@ -845,6 +977,46 @@ class FriendshipGraph(util.RubikScene):
         self.wait(2)
 
 
+
+def gen_house(color = RED, height = 1, z_index = 100):
+    pnts = [
+        np.array([232.535, 333.808, 0.0]),
+        np.array([277.698, 333.811, 0.0]),
+        np.array([277.387, 373.503, 0.0]),
+        np.array([318.11, 373.566, 0.0]),
+        np.array([318.057, 333.881, 0.0]),
+        np.array([363.215, 333.935, 0.0]),
+        np.array([362.703, 419.758, 0.0]),
+        np.array([368.717, 425.367, 0.0]),
+        np.array([379.969, 415.454, 0.0]),
+        np.array([390.258, 426.885, 0.0]),
+        np.array([297.362, 509.816, 0.0]),
+        np.array([256.582, 472.796, 0.0]),
+        np.array([256.626, 497.065, 0.0]),
+        np.array([232.588, 497.017, 0.0]),
+        np.array([232.899, 451.371, 0.0]),
+        np.array([204.978, 426.922, 0.0]),
+        np.array([215.11, 415.777, 0.0]),
+        np.array([225.569, 425.578, 0.0]),
+        np.array([232.235, 419.834, 0.0]),
+        np.array([232.549, 333.833, 0.0]),
+    ]
+
+    house = Polygon(
+        *pnts,
+        color = color,
+        fill_color = color,
+		fill_opacity = 1,
+        z_index = z_index
+    ).move_to(
+        0*DOWN
+    ).scale_to_fit_height(
+        height
+    )
+
+    return house   
+
+
 def gen_icon(color = BLUE, height = 1, z_index = 100):
     pnts = [
         np.array([407.837, 313.233, 0.0]),
@@ -875,3 +1047,5 @@ def gen_icon(color = BLUE, height = 1, z_index = 100):
     )
 
     return icon
+
+

@@ -218,3 +218,7 @@ POSSIBLE_MOVES = [
     "F'",
     "B'",
 ]
+
+#https://colorswall.com/palette/171
+cube.DEFAULT_CUBE_COLORS = ["#ffffff", "#b71234", "#009b48", "#ffd500", "#ff5800", "#0046ad"]
+# cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
