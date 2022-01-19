@@ -132,6 +132,7 @@ class MoveDefinition(util.RubikScene):
         self.add(*cubes)
         self.remove(first_cube)
 
+        # spread the cubes
         self.play(
             *[
                 cube.animate.shift(RIGHT * grid_spacing * (i - 2.5))
@@ -142,8 +143,10 @@ class MoveDefinition(util.RubikScene):
         self.wait()
 
         self.play(
-            *[CubeMove(cube, face + "4") for cube, face in zip(cubes, faces)],
-            run_time=3,
+            LaggedStart(
+                *[CubeMove(cube, face + "4") for cube, face in zip(cubes, faces)],
+                lag_ratio = DEFAULT_LAGGED_START_LAG_RATIO*10
+            ),
         )
 
         self.wait()
@@ -318,3 +321,260 @@ class NumberOfStates(Scene):
         self.play(Write(ten_to_ten_decimal))
         self.play(Write(ten_to_ten_scientific))
         self.wait()
+
+
+class Test(Scene):
+    def construct(self):
+        t1 = MathTex(r"{{ 10^{ a{{20}}a } x }}")
+        t1.set_color_by_tex("20", RED)
+        self.add(t1)
+
+class FormulaColor3(Scene): 
+    def construct(self):
+        text = MathTex("{ {{x}}{{\over}}{{y}} } {{a}}", color = GRAY)
+        text2 = MathTex("{ {{x}}{{\over}}{{y}} } {{b}}", color = GRAY)
+        # text[0].set_color(RED)
+        # text[1].set_color(BLUE)
+        # text[2].set_color(GREEN)
+        # text[3].set_color(YELLOW)
+        # text[4].set_color(PINK)
+        # text[5].set_color(ORANGE)
+        # text[6].set_color(PURPLE)
+        # text[7].set_color(MAROON)
+        self.add(text)
+        self.play(
+            TransformMatchingTex(text, text2)
+        )
+        self.wait(2)
+
+class NumberOfStates2(Scene):
+    def construct(self):
+        """
+        So can this work? Let’s try to find some basic parameters of Rubik’s
+        cube. A quick Wikipedia search shows that the number of its states
+        reachable from the starting one is exactly 43252003274489856000 which is
+        roughly 10^20.
+
+        So in the worst case, our algorithm will have to explore about 10^20
+        cube configurations until it finds a solution. That’s a lot! A computer
+        can explore roughly 10^6 configurations per second, so this would take
+        10^14 seconds, or millions of years. The limit of what we can possibly
+        explore with a normal computer in reasonable time is around 10^10 cube
+        states, the time to explore this number of configurations should be,
+        say, a few hours. Although 10^10 is also a huge number it is laughably
+        small if you compare it with 10^20.
+        """
+
+        font_size = 90
+        num = MathTex(r"{{43}}", color = GRAY, font_size = 400)
+        num_big = MathTex(
+            r"{{43}}{{\,252\,003\,274\,489\,856\,000}}", 
+            color = GRAY, 
+            font_size = font_size
+        )
+        num_big_apx = MathTex(
+            r"{{43}}{{\,252\,003\,274\,489\,856\,000}}{{ \;\,\;  \approx \;\,\; 10^{20} }}",
+            color = GRAY, # TODO proc se to rozbije kdyz tam neni carka
+            font_size = font_size
+        )
+        self.play(
+            Write(num)
+        )
+        self.wait()
+
+        self.play(
+            TransformMatchingTex(num, num_big)
+        )
+        self.wait()
+
+        self.play(
+            TransformMatchingTex(num_big, num_big_apx)
+        )
+        self.wait()
+
+        self.play(
+            num_big_apx.animate.shift(3*UP)
+        )
+
+        ten_twenty = MathTex(
+            r"{ 10^",
+            r"{20}",
+            r"}", 
+            color = GRAY, 
+            font_size = font_size
+        ).move_to(
+            num_big_apx.get_center()
+        ).align_to(
+            num_big_apx,
+            RIGHT
+        )
+
+        fractions_strings = [
+            [
+                r"{ 10^", 
+                r"{20}", 
+                r"\textrm{ states}", 
+                r"\over",
+                r"10^",
+                r"6",
+                r"\textrm{ states / s} }",
+                r"\,",
+                r"\,",
+                r"\,"
+            ],
+            [
+                r"{ 10^", 
+                r"{20}", 
+                r"\textrm{ states}", 
+                r"\over",
+                r"10^",
+                r"6",
+                r"\textrm{ states / s} }",
+                r"= 10^",
+                r"{14}",
+                r"\textrm{ s}",
+            ],
+            [
+                r"{ 10^", 
+                r"{20}", 
+                r"\textrm{ states}", 
+                r"\over",
+                r"10^",
+                r"6",
+                r"\textrm{ states / s} }",
+                r"= 10^",
+                r"{14}",
+                r"\textrm{ s}",
+                r"\approx ",
+                r"3 \cdot 10^6 \textrm{ years}"
+            ],
+        ]
+        font_sizes = 4 * [70]
+
+        fractions = [
+            MathTex( 
+                *strings,
+                color = GRAY,
+                font_size = f
+            ).align_to( 
+                num_big_apx,
+                LEFT
+            )
+            for strings, f in zip(fractions_strings, font_sizes)
+        ]
+
+
+        self.add(ten_twenty)
+        self.play(
+            TransformMatchingTex(ten_twenty, fractions[0])
+        )
+        self.wait()
+
+        self.play( 
+            ReplacementTransform(fractions[0], fractions[1])
+        )
+        self.wait()
+        
+        self.play(
+            TransformMatchingTex(fractions[1], fractions[2])
+        )
+        self.wait()
+
+
+
+
+        # 10^10
+
+        self.play(
+            fractions[-1].animate.shift(2*DOWN)
+        )
+        self.wait()
+
+        tens_strings = [
+            r"{{ 10\,000\,000\,000}}",
+            r"{{ 10\,000\,000\,000}}{{ \hspace{-0.05cm}\approx\hspace{-0.05cm} 10^{10} }}",
+        ]
+
+        tens = [
+            MathTex( 
+                str,
+                color = GRAY,
+                font_size = font_size
+            )
+            for str in tens_strings
+        ]
+        tens[1].align_to(num_big_apx, RIGHT).shift(0.0*RIGHT+1*UP)
+        tens[0].align_to(tens[1], LEFT).align_to(tens[1], DOWN)
+
+        self.play(
+            Write(tens[0])
+        )
+        self.wait()
+
+        self.play(
+            TransformMatchingTex(tens[0], tens[1])
+        )
+        self.wait()
+
+        # change 20 -> 10
+
+        # fractions_strings2 = [
+        #     r"{{ \frac{10^{\color{red}10 }\textrm{ states} }{10^6 \textrm{ states / s} } }}{{ = 10^{14} \textrm{ s} }}{{ \approx 3}}{{ \cdot 10^6 \textrm{ years} }}",
+        # ]
+        # fractions2 = [
+        #     MathTex( 
+        #         str,
+        #         color = GRAY,
+        #         font_size = font_sizes[0]
+        #     ).align_to(
+        #         fractions[-1],
+        #         LEFT
+        #     ).align_to(
+        #         fractions[-1],
+        #         DOWN
+        #     )
+        #     for str in fractions_strings2
+        # ]
+
+        newfrac = MathTex( 
+            *[
+                r"{ 10^", 
+                r"{10}", 
+                r"\textrm{ states}", 
+                r"\over",
+                r"10^",
+                r"6",
+                r"\textrm{ states / s} }",
+                r"= 10^",
+                r"{4}",
+                r"\textrm{ s}",
+                r"\approx ",
+                r"3 \textrm{ hours}"
+            ],
+            color = GRAY,
+            font_size = font_sizes[0]
+        ).align_to(
+            fractions[-1],
+            LEFT
+        ).align_to(
+            fractions[-1],
+            DOWN
+        )
+        newfrac[1].set_color(RED)
+        newfrac[8].set_color(RED)
+        newfrac[-1].set_color(RED)
+                
+
+
+        self.play(
+            TransformMatchingTex(fractions[-1], newfrac)
+        )
+        self.wait()
+
+        self.play(
+            Unwrite(newfrac),
+            Unwrite(num_big_apx),
+            Unwrite(tens[1])
+        )
+        self.wait()
+        # TODO pridat barvicky

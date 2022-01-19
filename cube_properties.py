@@ -26,7 +26,7 @@ class Neighborhood(util.RubikScene):
         TODO: v druhe fazi jdou cary pres kostky
         """
         self.next_section("First layer", skip_animations=False)
-
+        
         edges = set()
         q = [RubiksCube(cubie_size=0.2)]
         seen = set([q[0].hash()])
@@ -69,11 +69,17 @@ class Neighborhood(util.RubikScene):
 
         layout = {layers[0][0]: ORIGIN}
 
+        # compute positions of the cubes
         for li, layer in enumerate(layers[1:]):
             for i, h in enumerate(layer):
                 distance = (li + 1) * 3
                 pos = distance * UP * np.sin(2 * PI * i / len(layer))
                 pos += distance * RIGHT * np.cos(2 * PI * i / len(layer))
+                if li == 1:
+                    if i % 2 == 0:
+                        pos *= 1.05
+                    else:
+                        pos /= 1.05
                 layout[h] = pos
 
         print(f"Done with BFS, {len(seen)} vertices")
@@ -125,7 +131,7 @@ class Neighborhood(util.RubikScene):
             # )
 
             def f(cube):
-                return cube.move_to(layout[cube.hash()]).set_stroke_width(0).scale(0.2)
+                return cube.move_to(layout[cube.hash()]).set_stroke_width(0).scale(0.4)
 
             cube.move_to(layout[parents[h]])
             cube.shift(IN * 10)
@@ -977,6 +983,46 @@ class FriendshipGraph(util.RubikScene):
         self.wait(2)
 
 
+
+def gen_house(color = RED, height = 1, z_index = 100):
+    pnts = [
+        np.array([232.535, 333.808, 0.0]),
+        np.array([277.698, 333.811, 0.0]),
+        np.array([277.387, 373.503, 0.0]),
+        np.array([318.11, 373.566, 0.0]),
+        np.array([318.057, 333.881, 0.0]),
+        np.array([363.215, 333.935, 0.0]),
+        np.array([362.703, 419.758, 0.0]),
+        np.array([368.717, 425.367, 0.0]),
+        np.array([379.969, 415.454, 0.0]),
+        np.array([390.258, 426.885, 0.0]),
+        np.array([297.362, 509.816, 0.0]),
+        np.array([256.582, 472.796, 0.0]),
+        np.array([256.626, 497.065, 0.0]),
+        np.array([232.588, 497.017, 0.0]),
+        np.array([232.899, 451.371, 0.0]),
+        np.array([204.978, 426.922, 0.0]),
+        np.array([215.11, 415.777, 0.0]),
+        np.array([225.569, 425.578, 0.0]),
+        np.array([232.235, 419.834, 0.0]),
+        np.array([232.549, 333.833, 0.0]),
+    ]
+
+    house = Polygon(
+        *pnts,
+        color = color,
+        fill_color = color,
+		fill_opacity = 1,
+        z_index = z_index
+    ).move_to(
+        0*DOWN
+    ).scale_to_fit_height(
+        height
+    )
+
+    return house   
+
+
 def gen_icon(color = BLUE, height = 1, z_index = 100):
     pnts = [
         np.array([407.837, 313.233, 0.0]),
@@ -1007,3 +1053,5 @@ def gen_icon(color = BLUE, height = 1, z_index = 100):
     )
 
     return icon
+
+
