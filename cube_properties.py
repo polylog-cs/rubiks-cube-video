@@ -323,8 +323,8 @@ class NeighborCount(util.RubikScene):
                     FadeIn(cube),
                     Rotate(cube, 2 * PI, UP)
                 ),
-                *[Write(cell) for row in table[:7] for cell in row],
-                lag_ratio=0.1,
+                *[AnimationGroup(*[Write(cell) for cell in row]) for row in table[:7]],
+                lag_ratio=0.5,
             )
         )
         self.wait()

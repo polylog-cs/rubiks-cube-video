@@ -9,7 +9,7 @@ from solarized import *
 
 import util
 
-cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
+#cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
 class BFSCircleAnimations:
@@ -185,6 +185,8 @@ class BFSOneSide(util.RubikScene):
                 FadeOut(circle_anims_from.label),
                 FadeOut(circle_anims_from.circle),
             )
+        
+        self.wait()
 
         circle_anims_to = BFSCircleAnimations(
             cube_to.get_center(),
@@ -242,6 +244,7 @@ class BFSOneSide(util.RubikScene):
         self.play(Create(brace), Create(brace_text))
 
         self.wait()
+
 
         self.play(
             FadeOut(circle_anims_from.circles[n_steps_small - 1]),

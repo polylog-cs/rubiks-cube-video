@@ -170,12 +170,28 @@ class MoveDefinition(util.RubikScene):
         anims = []
         lag_ratio = DEFAULT_LAGGED_START_LAG_RATIO * 2
 
+        # for i, face in enumerate(faces):
+        #     anim = []
+        #     for j in [2, 0, 1]:
+        #         self.play_cube_sound((j * 6 + i) * lag_ratio / 2)
+        #         anim.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j], run_time=0.5))
+        #     anims.append(AnimationGroup(*anim))
+        # # for j in [2, 0, 1]:
+        # #     for i, face in enumerate(faces):
+        # #         self.play_cube_sound((j * 6 + i) * lag_ratio / 2)
+        # #         anims.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j], run_time=0.5))
+
         for j in [2, 0, 1]:
+            anim = []
             for i, face in enumerate(faces):
                 self.play_cube_sound((j * 6 + i) * lag_ratio / 2)
-                anims.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j], run_time=0.5))
-
-        self.play(LaggedStart(*anims, lag_ratio=lag_ratio))
+                anim.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j], run_time=0.5))
+            anims.append(AnimationGroup(*anim))
+        
+        self.play(anims[0], run_time = 1)
+        self.play(anims[1], run_time = 1)
+        self.play(anims[2], run_time = 1.5)
+        #self.play(LaggedStart(*anims, lag_ratio=lag_ratio))
         self.wait(2)
 
 

@@ -111,9 +111,10 @@ class UnzoomCubeGraph(util.RubikScene):
         return
 
 
+# houses and icons
 class HighlightCubeGraph(util.RubikScene):
     def construct(self):
-        self.next_section(skip_animations=True)
+        self.next_section(skip_animations=False)
 
         solved_cube = RubiksCube(cubie_size=0.15).set_stroke_width(0.5)
         n_nodes, edges, anims_to_do, g = get_graph()
@@ -147,17 +148,17 @@ class HighlightCubeGraph(util.RubikScene):
         self.next_section(skip_animations=False)
 
         houses = [
-            gen_house(height = 0.7).move_to(c.get_center())
+            gen_house().move_to(c.get_center())
             for c in cubes_on_scene
         ]
 
         icons = [
-            gen_icon(height = 0.7).move_to(c.get_center()) for c in cubes_on_scene
+            gen_icon().move_to(c.get_center()) for c in cubes_on_scene
         ]
         
         infty = 10000.0
         for c, house, icon in zip(cubes_on_scene, houses, icons):
-            house.width = icon.width = c.width
+            house.width = icon.width = c.width * 0.7
             house.scale(1.0 / infty)
             icon.scale(1.0 / infty)
 
@@ -240,25 +241,18 @@ class BFSCubeGraph(util.RubikScene):
             for v in shortest_path
         ]
 
-        for o in circles:
-            o.set_z_index(-100)
-        for e in edges:
-            g.edges[e].set_z_index(-100)
-
-        self.play( # TODO prestal fungovat z-index
-            AnimationGroup(
-                g.edges[edges[3]].animate.set_color(RED),
-                GrowFromCenter(circles[3]),
-                g.edges[edges[2]].animate.set_color(RED),
-                GrowFromCenter(circles[2]),
-                g.edges[edges[1]].animate.set_color(RED),
-                GrowFromCenter(circles[1]),
-                g.edges[edges[0]].animate.set_color(RED),
-                lag_ratio = 0.5
-            )
+        self.play(
+            *[g.edges[e].animate.set_color(RED) for e in edges],
+            *[GrowFromCenter(circle) for circle in circles],
         )
+        # self.play( 
+        #     AnimationGroup(
+        #         *[g.edges[e].animate.set_color(RED) for e in edges],
+        #         *[GrowFromCenter(circle) for circle in circles],
+        #     )
+        # )
         self.wait()
-        return 
+
         self.play(
             *[g.edges[e].animate.set_color(GRAY) for e in edges],
             *[ShrinkToCenter(circle) for circle in circles],

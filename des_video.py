@@ -86,14 +86,27 @@ def constructRandomString(lineLen = 8, numLines = 6):
 	random.setstate(old_state)
 	return strList
 
+
+# Hi, the super secret ingredient for that burger is
 strPlainText = [
-	r"funny text",
-	r"funny text",
-	r"funny text",
-	r"funny text",
-	r"funny text",
-	r"funny text"
+	r"Hi,",
+	r"the su-",
+	r"per secret",
+	r"ingredient",
+	r"for the",
+	r"burger is",
 ]
+# You can't tell anybody ok? The secret formula for my Krabby Patty burger is
+# strPlainText = [
+# 	r"You cannot",
+# 	r"tell anybody",
+# 	r"ok? The sec-",
+# 	r"ret formula",
+# 	r"for Krabby",
+# 	r"Patty burger",
+# ]
+
+
 strCipherText = constructRandomString()
 
 rng_state_2 = random.getstate()
@@ -684,7 +697,6 @@ class DesIntro(Scene):
 		self.play(Transform(DesText, DesTextShort))
 		self.wait()
 
-		return
 
 		# first key occurence
 		key = Key(ourKeyString, clipartWidth = keyWidthLarge)
@@ -1090,7 +1102,7 @@ class TripleDes(Scene):
 
 		plain = Btext(
 			strPlainText, 
-			position = posPlain.copy()
+			position = 2*DOWN + 6*LEFT
 		)
 
 		self.play(Transform(DesText,TripleDes))
@@ -1208,8 +1220,6 @@ class TripleDes(Scene):
 			Transform(topKeys[1].brace, newBrace),
 			ciphers[2].tagText.animate().shift(-txtShift)
 		)
-		self.wait()
-
 		self.play(
 			FadeOut(ciphers[2].tagText),
 			ciphers[1].addTag("cipher text"),
@@ -1910,13 +1920,16 @@ class GeneralMITM(ThreeDScene):
 			for t in text:
 				anims.append(Unwrite(t))
 
+
 		self.play(
 			*anims,
 			*[t.remove() for t in [plain, inter, cipher]],
 			*[Uncreate(key) for key in [key1, key2]],
+			#cube.animate.rotate(2*PI, UP).shift(14.2 * RIGHT),
 			FadeOut(cube)
 		)
 		self.wait()
+
 
 		# final thanks
 		channel_name = Tex(r"polylog", color=textColor)
@@ -1925,8 +1938,8 @@ class GeneralMITM(ThreeDScene):
 		thanks = [
 			Tex(str, color = textColor)
 			for str in [
-				r"Big thanks to: 3blue1brown \& Manim community",
-				"people",
+				r"Big thanks to: 3blue1brown \& Manim community for Manim",
+				"KingWampy for Rubik's cube library in Manim",
 				"people"
 			]
 		]

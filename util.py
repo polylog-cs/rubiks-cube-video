@@ -2,7 +2,7 @@ import glob
 import random
 
 from manim_rubikscube import *
-from manim import ThreeDScene, smooth
+from manim import *
 
 from manim_rubikscube import cube_utils
 
@@ -222,3 +222,79 @@ POSSIBLE_MOVES = [
 #https://colorswall.com/palette/171
 cube.DEFAULT_CUBE_COLORS = ["#ffffff", "#b71234", "#009b48", "#ffd500", "#ff5800", "#0046ad"]
 # cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
+
+
+def gen_house(color = RED, height = 1, z_index = 100):
+    pnts = [
+        np.array([232.535, 333.808, 0.0]),
+        np.array([277.698, 333.811, 0.0]),
+        np.array([277.387, 373.503, 0.0]),
+        np.array([318.11, 373.566, 0.0]),
+        np.array([318.057, 333.881, 0.0]),
+        np.array([363.215, 333.935, 0.0]),
+        np.array([362.703, 419.758, 0.0]),
+        np.array([368.717, 425.367, 0.0]),
+        np.array([379.969, 415.454, 0.0]),
+        np.array([390.258, 426.885, 0.0]),
+        np.array([297.362, 509.816, 0.0]),
+        np.array([256.582, 472.796, 0.0]),
+        np.array([256.626, 497.065, 0.0]),
+        np.array([232.588, 497.017, 0.0]),
+        np.array([232.899, 451.371, 0.0]),
+        np.array([204.978, 426.922, 0.0]),
+        np.array([215.11, 415.777, 0.0]),
+        np.array([225.569, 425.578, 0.0]),
+        np.array([232.235, 419.834, 0.0]),
+        np.array([232.549, 333.833, 0.0]),
+    ]
+
+    house = Polygon(
+        *pnts,
+        color = color,
+        fill_color = color,
+		fill_opacity = 1,
+        z_index = z_index
+    ).move_to(
+        0*DOWN
+    ).scale_to_fit_height(
+        height
+    )
+
+    return house   
+
+
+def gen_icon(color = BLUE, height = 1, z_index = 100):
+    pnts = [
+        np.array([407.837, 313.233, 0.0]),
+        np.array([340.843, 431.234, 0.0]),
+        np.array([297.995, 558.503, 0.0]),
+        np.array([253.986, 431.689, 0.0]),
+        np.array([187.414, 311.624, 0.0]),
+    ]
+
+    icon = ArcPolygon(
+        *pnts,
+        color = color,
+        arc_config = [
+            { 'radius': 119.256, 'color': color},
+            { 'radius': 70.9444, 'color': color},
+            { 'radius': 70.9444, 'color': color},
+            { 'radius': 119.256, 'color': color},
+            { 'radius': 216.488, 'color': color},
+
+        ],
+        fill_color = color,
+		fill_opacity = 1,
+        z_index = z_index
+    ).move_to(
+        0*DOWN
+    ).scale_to_fit_height(
+        height
+    )
+
+    return icon
+
+
+
+
+
