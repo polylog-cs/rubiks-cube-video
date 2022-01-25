@@ -117,6 +117,7 @@ class BFSOneSide(util.RubikScene):
         Ukázat slupky z obou stran, musí se protínat
 
         """
+
         base_radius = 0.9
         radius_step = 0.3
         n_steps = 20
@@ -124,6 +125,8 @@ class BFSOneSide(util.RubikScene):
         overlap = 2
 
         cube_distance = base_radius + radius_step * (n_steps - overlap / 2 - 1)
+        
+        #radius_step = (cube_distance - base_radius) / 19.0
 
         cube_from = RubiksCube(cubie_size=0.3, rotate_nicely=True).shift(
             LEFT * cube_distance / 2

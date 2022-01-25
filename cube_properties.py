@@ -338,11 +338,9 @@ class NeighborCount(util.RubikScene):
         # 20 and 10^20 + dots
         dots[0].move_to(
             (
-                table[-3][0].get_right()
-                +table[-3][1].get_left()
-                +table[-1][0].get_right()
-                +table[-1][1].get_left()
-            )/4
+                table[-3][0].get_center()
+                + table[-1][0].get_center()
+            )/2
         )
         self.play(
             Write(dots[0]),
@@ -350,14 +348,38 @@ class NeighborCount(util.RubikScene):
         )
         self.wait()
 
+        # right column
+        right_col = [
+            MathTex(
+                (r"\sim 10^" if i != 0 else r"= 10^") + str(i),
+                color = GRAY,
+                font_size = font_size
+            ).move_to(
+                table[i+1][1].get_left()
+                + 2.2*RIGHT
+            )
+            for i in range(6)
+        ]
+
+        self.play(
+            *[Write(col) for col in right_col],
+            table[-1][1].animate.align_to(right_col[0], LEFT)
+        )
+        self.wait()
+
+
         # n and 10^n
 
+        self.wait()
         dots[1].move_to(dots[0].get_center())
-        eps = 0.4
+        eps = 0.3
         self.play(
             dots[0].animate().shift(eps * UP).scale(0.5),
             dots[1].animate().shift(eps * DOWN).scale(0.5)
         )
+        self.wait()
+
+        table[-2][1].align_to(right_col[0], LEFT)
         self.play(
             LaggedStart(*[Write(cell) for cell in table[-2]], lag_ratio=0.1)
         )
@@ -379,6 +401,7 @@ class NeighborCount(util.RubikScene):
         background_rect.next_to(14.2 / 2 * LEFT, direction=LEFT)
         self.add(background_rect)
 
+        magic = 0.5
         self.play(
             background_rect.animate.move_to(
                 # background_rect.get_boundary_point(direction=RIGHT) * RIGHT
@@ -386,7 +409,8 @@ class NeighborCount(util.RubikScene):
                 / 4
                 * LEFT
             ),
-            Group(rubiks_group, *[dots]).animate.shift(RIGHT * 14.2 / 4),
+            cube.animate.shift(RIGHT * 14.2 / 4),
+            Group(table_group, *dots, *right_col).animate.shift(magic*LEFT+RIGHT * 14.2 / 4),
             run_time=2,
         )
 
@@ -445,14 +469,18 @@ class NeighborCount(util.RubikScene):
 
 
         # add table anims
-        grid_table_values = [[n, 2*n*n + 2*n + 1] for n in range(6)]
+        grid_table_values = [
+            [n, 2*n*n + 2*n + 1] for n in range(6)
+        ]
 
         #grid_table = [[r"\textbf{Steps}", r"\textbf{Explored}"]]
         grid_table = [[with_thousand_separator(x) for x in row] for row in grid_table_values]
         #grid_table += [["$n$", r"$2n^2 + 2n + 1$"]]
 
-        grid_table = [[Tex(x, color=GRAY, font_size = smaller_font_size) for x in row] for row in grid_table]
-
+        grid_table = [[
+            Tex(r"\textbf{Steps}", color=GRAY, font_size = smaller_font_size), Tex(r"\textbf{Explored}", color=GRAY, font_size = font_size)
+        ]]+[[Tex(x, color=GRAY, font_size = smaller_font_size) for x in row] for row in grid_table]
+        
         grid_table_group = Group()
         for row in grid_table:
             grid_table_group.add(*row)
@@ -465,8 +493,14 @@ class NeighborCount(util.RubikScene):
             buff=(horizontal_buff2, SMALL_BUFF),
         ).next_to(graph, direction=DOWN, buff=MED_SMALL_BUFF)
 
-        for i in range(6):
-            anims[i] += [Write(cell) for cell in grid_table[i]]
+        # write the first row
+        self.play(
+            Write(grid_table[0][0]),
+            Write(grid_table[0][1]),
+        )
+
+        for i in range(1, 7):
+            anims[i-1] += [Write(cell) for cell in grid_table[i]]
 
 
 
@@ -491,10 +525,12 @@ class NeighborCount(util.RubikScene):
 
 
 
-        #the grid shifts and table is finished
+        #the grid shifts and table is made bigger
         self.next_section(skip_animations=False)
 
-        values_manhattan = [[Tex(r"\textbf{Steps}", color=GRAY, font_size = font_size), Tex(r"\textbf{Explored}", color=GRAY, font_size = font_size)]]
+        values_manhattan = [[
+            Tex(r"\textbf{Steps}", color=GRAY, font_size = font_size), Tex(r"\textbf{Explored}", color=GRAY, font_size = font_size)
+        ]]
         for a,b in grid_table_values:
             values_manhattan += [[Tex(str(a), color = GRAY, font_size = font_size), Tex(str(b), color = GRAY, font_size = font_size)]]
         values_manhattan += [[MathTex("n", color=RED, font_size = font_size), MathTex("{{2n^2}} + 2n + 1", color=RED, font_size = font_size)]]
@@ -505,22 +541,22 @@ class NeighborCount(util.RubikScene):
             col_alignments="rl",
             row_alignments="d" * len(values_manhattan),
             buff=(horizontal_buff, MED_SMALL_BUFF),
-        ).align_to(table_group, UP).align_to(table_group, LEFT).shift(14.2/2*LEFT)
+        ).align_to(table_group, UP).align_to(table_group, LEFT).shift(magic*RIGHT+14.2/2*LEFT)
 
         for cell in values_manhattan[-1]:
             # The constant is needed because $n^2$ is taller than 10^n
             cell.set_color(RED).shift(MED_SMALL_BUFF * DOWN * 0.5)
 
 
-      
+        # change table to a bigger one      
         anims = []
-        for i in range(6):
+        for i in range(7):
             anims += [
                     cell1.animate().become(cell2) 
                     for cell1, cell2 
-                    in zip(grid_table[i], values_manhattan[i+1])
+                    in zip(grid_table[i], values_manhattan[i])
                 ]
-        anims += [Write(cell) for cell in values_manhattan[0] + values_manhattan[-1]]
+        # anims += [Write(cell) for cell in values_manhattan[0] + values_manhattan[-1]]
 
         #shifting manhattan        
         avg = sum(graph._layout.values()) / len(graph._layout)
@@ -531,15 +567,31 @@ class NeighborCount(util.RubikScene):
         self.play(
             *[dot.animate().scale(0.1) for _,dot in graph.vertices.items()]
         )
-        self.wait()
+        #self.wait()
         self.play(
-            graph.animate().change_layout(new_layout),
+            graph.animate.change_layout(new_layout),
+            run_time = 2 # run_time = 1 vypada divne ve vysoke kvalite
         )
         self.wait()
         self.play(
             *anims
         )
         self.wait()
+
+        # create the row with n
+        dots_left = dots[0].copy().move_to(
+            (
+                values_manhattan[-2][0].get_center()
+                +values_manhattan[-1][0].get_center()
+            )/2
+        )
+        self.play(
+            Write(dots_left),
+            Write(values_manhattan[-1][0]),
+            Write(values_manhattan[-1][1])
+        )
+        self.wait()
+
         #change to 2n^2
         new_text = MathTex("\\sim {{2n^2}}", color = RED, font_size = font_size).move_to(
             values_manhattan[-1][1].get_center()
@@ -562,13 +614,14 @@ class NeighborCount(util.RubikScene):
 
 
         self.play(
-            Circumscribe(Group(*table[6]))
+            Circumscribe(Group(*table[6], right_col[5]), color = RED)
         )
         self.wait()
 
         self.play(
             FadeOut(background_rect),
             *[Unwrite(dot) for dot in dots],
+            *[Unwrite(col) for col in right_col],
             *[Unwrite(t) for t in table_group],
             *[(Unwrite(t) if t != values_manhattan[-1][1] else Wait(0)) for t in grid_table_group],
             Unwrite(values_manhattan[0][0]),
@@ -974,7 +1027,23 @@ class FriendshipGraph(util.RubikScene):
         self.play(
             AnimationGroup(*[Write(label) for label in labels], lag_ratio = 1)
         )
-        self.wait(2)
+        self.wait()
+
+        # grant winks
+        grant_wink = ImageMobject(
+            "img/grant_wink.png"
+        ).scale_to_fit_height(
+            grant.get_height()
+        ).move_to(
+            grant.get_center()
+        )
+
+        wink_time = 0.3
+        self.play(FadeOut(grant_wink), run_time=wink_time)
+
+
+
+        self.wait()
 
 
 

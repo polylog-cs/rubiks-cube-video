@@ -10,6 +10,8 @@ from manim_rubikscube import *
 # This also replaces the default colors
 from solarized import *
 
+import matplotlib.colors as mplcolors
+
 import util
 
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
@@ -111,6 +113,7 @@ class UnzoomCubeGraph(util.RubikScene):
         return
 
 
+
 # houses and icons
 class HighlightCubeGraph(util.RubikScene):
     def construct(self):
@@ -186,10 +189,29 @@ class HighlightCubeGraph(util.RubikScene):
         self.play(*[cube.animate.scale(infty) for cube in cubes_on_scene])
         self.wait()
 
+class Test(Scene):
+    def construct(self):
+        red_rgb = np.array(mplcolors.hex2color(RED))
+        magenta_rgb = np.array(mplcolors.hex2color(MAGENTA))
+        red_shades = [
+            mplcolors.rgb2hex( ( red_rgb*i + magenta_rgb*(4-i) ) / 5.0)
+            for i in range(5)
+        ]
+        self.add(Dot(color = red_shades[2]))
 
 class BFSCubeGraph(util.RubikScene):
     def construct(self):
         self.next_section(skip_animations=False)
+
+        red_rgb = np.array(mplcolors.hex2color(RED))
+        white_rgb = np.array(mplcolors.hex2color(WHITE))
+        # red_shades = [
+        #     mplcolors.rgb2hex( (white_rgb *i + red_rgb*(10-i) ) / 10.0)
+        #     for i in range(5)
+        # ]
+        # red_shades = [ORANGE, RED, MAGENTA, VIOLET, BLUE]
+        # red_shades = [RED, MAGENTA, VIOLET, BLUE, CYAN]
+        red_shades = 5*[RED]
 
         solved_cube = RubiksCube(cubie_size=0.15).set_stroke_width(0.5).shift(OUT)
         n_nodes, _edges, anims_to_do, g = get_graph()
@@ -222,10 +244,10 @@ class BFSCubeGraph(util.RubikScene):
         radius2 = 0.45
 
         solved_circle = Dot(
-            g[solved_i].get_center(), radius=radius, fill_color=RED, shade_in_3d=True
+            g[solved_i].get_center(), radius=radius, fill_color=red_shades[-1], shade_in_3d=True
         )
         scrambled_circle = Dot(
-            g[scrambled_i].get_center(), radius=radius, fill_color=RED, shade_in_3d=True
+            g[scrambled_i].get_center(), radius=radius, fill_color=red_shades[0], shade_in_3d=True
         )
 
         self.play(GrowFromCenter(solved_circle), GrowFromCenter(scrambled_circle))
@@ -237,9 +259,12 @@ class BFSCubeGraph(util.RubikScene):
             for (u, v) in g.edges.keys()
             if u in shortest_path and v in shortest_path
         ]
+
+
+
         circles = [
-            Dot(radius=radius2, fill_color=RED, shade_in_3d=True).move_to(g[v])
-            for v in shortest_path
+            Dot(radius=radius2, fill_color=col, shade_in_3d=True).move_to(g[v])
+            for v, col in zip(shortest_path, list(reversed(red_shades)))
         ]
 
         self.play(
@@ -268,6 +293,7 @@ class BFSCubeGraph(util.RubikScene):
         #     )
         # )
         self.wait()
+
 
         self.play(
             *[g.edges[e].animate.set_color(GRAY) for e in edges],
@@ -300,6 +326,7 @@ class BFSCubeGraph(util.RubikScene):
         for i, (l_vertices, l_edges) in enumerate(zip(bfs_vertices, bfs_edges)):
             anims = []
             for v in l_vertices:
+                circles[v].set_color(red_shades[i])
                 anims.append(GrowFromCenter(circles[v]))
                 seen.add(v)
 
@@ -308,7 +335,7 @@ class BFSCubeGraph(util.RubikScene):
                     e = e[1], e[0]
 
                 edge = g.edges[e]
-                anims.append(edge.animate.set_color(RED))
+                anims.append(edge.animate.set_color(red_shades[i]))
 
             print(i)
             if i > 0:

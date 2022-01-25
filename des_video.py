@@ -1,3 +1,4 @@
+from curses import COLOR_CYAN
 from os import wait
 import string
 from manim import *
@@ -13,7 +14,7 @@ from tqdm import tqdm
 from manim_rubikscube import *
 
 # Temne pozadi, ale zakomentovat pro DesIntro a GeneralMITM !!!
-# config.background_color = BASE02
+config.background_color = BASE02
 
 
 random.seed(0)
@@ -26,7 +27,11 @@ textColor = GRAY
 encodeColor = RED
 decodeColor = BLUE
 borderColor = GRAY
-smallFontSize = 20
+#plainCipherColor = DARK_BROWN
+plainColor = CYAN
+cipherColor = YELLOW2
+smallFontSize = 15
+tinyFontSize = 5
 fontSize = 40 
 padding = 0.5 # between the text and the border around it
 
@@ -68,7 +73,7 @@ def flatten(t):
 # constructing random strings inside keys and ciphertexts
 rng_state_1 = random.getstate()
 
-def constructRandomString(lineLen = 8, numLines = 6):
+def constructRandomString(lineLen = 30, numLines = 12):
 	global rng_state_1
 	old_state = random.getstate()
 	random.setstate(rng_state_1)
@@ -81,30 +86,45 @@ def constructRandomString(lineLen = 8, numLines = 6):
 			str += random.choice(letters)
 		strList.append(str)
 	strList[-1] = strList[-1][:-3] + "..."
+	strList[0] = strList[0][0: int(lineLen * tinyFontSize / smallFontSize - 1)]
 
 	rng_state_1 = random.getstate()
 	random.setstate(old_state)
-	return strList
+	fontSizes = [smallFontSize] + [tinyFontSize]*(len(strList) - 1)
+	return [(str, fontSize) for str, fontSize in zip(strList, fontSizes)]
 
 
-# Hi, the super secret ingredient for that burger is
 strPlainText = [
-	r"Hi,",
-	r"the su-",
-	r"per secret",
-	r"ingredient",
-	r"for the",
-	r"burger is",
+	("Hi mom,", 15),
+	("yes, I am watching all Polylog", 5),
+	("videos as you wanted me to. ", 5),
+	("Just now I watch the one about", 5),
+	("meet in the middle, the part", 5),
+	("about the DES cipher. Did you", 5),
+	("read the dummy plain text ", 5),
+	("message there? It starts with:", 5),
+	("\"Hi mom, yes, I am watching", 5),
+	("all Polylog videos as you ", 5),
+	("wanted me to. Just now I watch", 5),
+	("the one about meet in the ...", 5)
+	##123456789012345678901234567890
 ]
-# You can't tell anybody ok? The secret formula for my Krabby Patty burger is
-# strPlainText = [
-# 	r"You cannot",
-# 	r"tell anybody",
-# 	r"ok? The sec-",
-# 	r"ret formula",
-# 	r"for Krabby",
-# 	r"Patty burger",
-# ]
+
+strPlainText = [
+	("Hi mom,", 15),
+	("yes, I am watching all Polylog videos", 5),
+	("as you wanted me to. Just now I watch ", 5),
+	("the one about the meet in the middle", 5),
+	("technique, the part about breaking", 5),
+	("the double DES cipher. Did you read", 5),
+	("the dummy plain text message in that", 5),
+	("part of the video? It starts with:", 5),
+	("\"Hi mom, yes, I am watching all", 5),
+	("Polylog videos as you wanted me to. ", 5),
+	("Just now I watch the one about the ", 5),
+	("meet in the middle technique, the...", 5)
+	##123456789012345678901234567890
+]
 
 
 strCipherText = constructRandomString()
@@ -146,38 +166,32 @@ unknownKeyString = "???...?????"
 
 # text object
 class Btext:
-	def __init__(self, strLines, position = np.array([0, 0, 0]), width = None, height = None, scale = 1.0, fill_color = None, fill_opacity = 0.0):
+	def __init__(self, strLines, position = np.array([0, 0, 0]), color = textColor, width = None, height = None, scale = 1.0, fill_color = None, fill_opacity = 0.0):
 		self.position = position
 		self.width = width
 		self.height = height
 		self.strLines = strLines
 		self.fill_color = fill_color
 		self.fill_opacity = fill_opacity
+		self.color = color
 		self.tag = False
 
 		self.lines = Group(*[
 			Tex(
 				str, 
-				color = textColor, 
-				font_size = smallFontSize,
-			).scale(scale) for str in strLines
+				color = self.color, 
+				font_size = size,
+			).scale(scale) for str, size in strLines
 		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 
 		self.border = constructTextBorder(
 			insideObject = self.lines,
 			width = self.width,
 			height = self.height, 
+			color = self.color,
 			fill_color = self.fill_color,
 			fill_opacity = self.fill_opacity,
 		).scale(scale)
-
-		# self.lines = Group(*[
-		# 	Tex(
-		# 		str, 
-		# 		color = textColor, 
-		# 		font_size = smallFontSize,
-		# 	) for str in strLines
-		# ]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding)
 
 
 		self.textBorder = Group(self.border, self.lines)
@@ -189,7 +203,7 @@ class Btext:
 		self.strLines = newStrLines
 
 		newLines = Group(*[
-			Tex(str, color = textColor, font_size = smallFontSize) for str in self.strLines
+			Tex(str, color = self.color, font_size = size) for str,size in self.strLines
 		]).arrange(DOWN, center = False, aligned_edge = LEFT, buff = textPadding).move_to(self.lines.get_center())
 
 		if empty == False:
@@ -208,9 +222,14 @@ class Btext:
 		anim = []
 
 		if noText == False:
-			anim.append(AnimationGroup(
-					*[Write(text) for text in self.lines],
-					lag_ratio = 0.2
+			anim.append(
+				AnimationGroup(
+					Write(self.lines[0]),
+					AnimationGroup(
+						*[Write(text) for text in self.lines[1:]],
+						lag_ratio = 0.2,
+						run_time = 1
+					)
 				)
 			)
 
@@ -218,7 +237,7 @@ class Btext:
 			self.tag = True
 			self.tagText = Tex(
 				tagStr,
-				color = textColor,
+				color = self.color,
 				font_size = fontSize
 			).move_to(
 				self.border.get_center()
@@ -280,7 +299,7 @@ class Btext:
 		self.tag = True
 		self.tagText = Tex(
 			tagStr,
-			color = textColor,
+			color = self.color,
 			font_size = fontSize
 		).move_to(
 			self.border.get_center()
@@ -655,6 +674,27 @@ class Key:
 		return AnimationGroup(*anims)
 
 
+class Test(Scene):
+	def construct(self):
+		txt = Btext(strPlainText, color = textColor)
+		self.play(
+			txt.create()
+		)
+
+		txt2 = Btext(constructRandomString(), color = YELLOW2, position = 3*RIGHT)
+		txt3 = Btext(constructRandomString(), color = CYAN, position = -3*RIGHT)
+		txt4 = Btext(constructRandomString(), color = YELLOW_D, position = 2*DOWN+3*RIGHT)
+		txt5 = Btext(constructRandomString(), color = YELLOW_E, position = 2*DOWN-3*RIGHT)
+		txt6 = Btext(constructRandomString(), color = BLACK, position = 2*DOWN)
+		self.play(
+			txt2.create(),
+			txt3.create(),
+			txt4.create(),
+			txt5.create(),
+			txt6.create()
+		)
+		self.wait(5)
+
 class DesIntro(Scene):
 	def construct(self):
 		# spouštět to se světlým, ne tmavým pozadím
@@ -723,7 +763,7 @@ class DesIntro(Scene):
 		self.wait()
 
 		#plain text
-		plain = Btext(strPlainText, position = midDiagramPos.copy() + diagramWidth/2 * LEFT)
+		plain = Btext(strPlainText, color = plainColor, position = midDiagramPos.copy() + diagramWidth/2 * LEFT)
 		self.play(
 			plain.create(tag = True, tagStr = "plain text")
 		)
@@ -735,6 +775,7 @@ class DesIntro(Scene):
 		# cipher text
 		cipher = Btext(
 			strCipherText, 
+			color = cipherColor,
 			width = plain.width, 
 			height = plain.height,
 			position = midDiagramPos.copy() - plain.position[0]*RIGHT
@@ -780,6 +821,7 @@ class DesIntro(Scene):
 			cipher.strLines, 
 			position = cipher.position.copy(),
 			width = cipher.width,
+			color = cipherColor,
 			height = cipher.height,
 		) 
 
@@ -810,7 +852,7 @@ class DesIntro(Scene):
 
 		self.play(key2.createBlueArrow())
 
-		plain2 = Btext(plain.strLines, position  = plain.position.copy())
+		plain2 = Btext(plain.strLines, color = plainColor, position  = plain.position.copy())
 		self.play(
 			plain2.create(),
 			run_time = 0
@@ -897,23 +939,27 @@ class DesIntro(Scene):
 		)
 
 		self.play(
-			plain.move_to(midDiagramPos - diagramWidth * RIGHT /2 + diagramWidth/3 * LEFT),
+			plain.shift(midDiagramPos - topDiagramPos),
 		)
-		print(midDiagramPos - diagramWidth * RIGHT /2)
 		self.play(
 			plain.addTag("plain text")
 		)
+		self.wait()
 
 		self.play(
-			cipher.move_to(midDiagramPos + diagramWidth * RIGHT /2+diagramWidth/3 * RIGHT)
+			cipher.shift(midDiagramPos - topDiagramPos),
 		)
-		print(midDiagramPos)
 		self.play(
 			cipher.addTag("cipher text")
 		)
 
 		self.wait()
 
+		finalkey = Key(unknownKeyString, position = key.position+midDiagramPos-topDiagramPos)
+		self.play(
+			finalkey.createRectangleKey(noBrace = True)
+		)
+		self.wait()
 
 class DesBruteForce(Scene):
 	def construct(self):
@@ -932,22 +978,33 @@ class DesBruteForce(Scene):
 
 		# create plain and cipher text
 
-		plain = Btext(strPlainText, position = midDiagramPos - diagramWidth * RIGHT /2 - diagramWidth/3 * RIGHT)
+		plain = Btext(strPlainText, color = plainColor, position = midDiagramPos - diagramWidth * RIGHT /2 )
 		self.play(
 			plain.create(tag = True, tagStr = "plain text"),
 			run_time = 0.01
 		)
 
-		cipher = Btext(strCipherText, width = plain.width, height = plain.height, position = midDiagramPos + diagramWidth*RIGHT/2+diagramWidth/3 * RIGHT)
+		cipher = Btext(strCipherText, color = cipherColor, width = plain.width, height = plain.height, position = midDiagramPos + diagramWidth*RIGHT/2)
 		self.play(
 			cipher.create(tag = True, tagStr = "cipher text"),
 			run_time = 0.01
 		)
 
-		key = Key(unknownKeyString, position = midDiagramPos + diagramWidth/3 * LEFT)
+		key = Key(unknownKeyString, position = midDiagramPos)
+		# + diagramWidth/3 * LEFT)
 		self.play(
-			key.createRectangleKey()
+			key.createRectangleKey(),
+			run_time = 0.01
 		)
+		
+		# shift plain to the left
+		self.play(
+			key.shiftRec(diagramWidth/3 * LEFT, noBrace = False),
+			plain.shift(diagramWidth/3 * LEFT),
+			cipher.shift(diagramWidth/3*RIGHT)
+		)
+		self.wait()
+
 
 		guess = Btext(
 			constructRandomString(), 
@@ -1107,7 +1164,8 @@ class TripleDes(Scene):
 
 		plain = Btext(
 			strPlainText, 
-			position = 2*DOWN + 6*LEFT
+			position = 2*DOWN + 6*LEFT, 
+			color = plainColor
 		)
 
 		self.play(Transform(DesText,TripleDes))
@@ -1126,8 +1184,9 @@ class TripleDes(Scene):
 				constructRandomString(), 
 				position = pos.copy(), 
 				width = plain.width,
-				height = plain.height
-			) for pos in cipherPositions
+				height = plain.height,
+				color = col
+			) for pos, col in zip(cipherPositions, [textColor, textColor, cipherColor])
 		]
 
 		keys = [
@@ -1210,42 +1269,68 @@ class TripleDes(Scene):
 		newBrace = Brace(Group(newKeys[0][1], newKeys[1][1]), UP, color = textColor).move_to(topKeys[1].brace)
 		
 
-		# shift to the right
-
+		self.next_section(skip_animations= False)
+		# change from triple to double
 		self.play(
+			keys[1].remove(),
+			ciphers[1].remove(),
+			FadeOut(topKeys[1].border),
+			Unwrite(topKeys[1].text),
 			Transform(DesText, DoubleDes),
-			*[txt.shift(txtShift) for txt in ciphers+[plain]],
-			*[key.shiftRec(txtShift) for key in keys],
-			*flatten([
-				[Transform(key.border, border), 
-				Transform(key.text,text)]
-				for (key, [border, text]) in zip(topKeys, newKeys)
-			]),
-			Transform(topKeys[1].title, newTitle),
+		)
+		self.wait()
+
+		shft = ciphers[1].border.get_center()[0] * LEFT
+		shft2 = topKeys[0].border.get_center()[0]*LEFT
+
+		self.play(
+			ciphers[0].shift(-shft),
+			keys[0].shiftRec(-shft/2),
+			keys[2].shiftRec(shft/2),
+			topKeys[0].shiftRec(shft2/2, noBrace = True),
+			topKeys[2].shiftRec(-shft2/2, noBrace = True),
 			Transform(topKeys[1].brace, newBrace),
-			ciphers[2].tagText.animate().shift(-txtShift)
+			Transform(topKeys[1].title, newTitle),
 		)
-		self.play(
-			FadeOut(ciphers[2].tagText),
-			ciphers[1].addTag("cipher text"),
-			run_time = 0.001
-		)
-
 		self.wait()
 
-		self.play(
-			FadeOut(ciphers[2].border), *[FadeOut(txt) for txt in ciphers[2].lines], 
-			FadeOut(topKeys[2].border), FadeOut(topKeys[2].text),
-			FadeOut(keys[2].border), FadeOut(keys[2].text), FadeOut(keys[2].redArrow), FadeOut(keys[2].braceTitle),
-		)
+		# return 
 
-		self.wait()
+		# self.play(
+		# 	FadeOut(ciphers[2].border), *[FadeOut(txt) for txt in ciphers[2].lines], 
+		# 	FadeOut(topKeys[2].border), FadeOut(topKeys[2].text),
+		# 	FadeOut(keys[2].border), FadeOut(keys[2].text), FadeOut(keys[2].redArrow), FadeOut(keys[2].braceTitle),
+		# 	Transform(topKeys[1].title, newTitle),
+		# 	Transform(topKeys[1].brace, newBrace),
+		# )
+		# return
+
+		# # shift to the right
+		# self.play(
+		# 	*[txt.shift(txtShift) for txt in ciphers+[plain]],
+		# 	*[key.shiftRec(txtShift) for key in keys],
+		# 	*flatten([
+		# 		[Transform(key.border, border), 
+		# 		Transform(key.text,text)]
+		# 		for (key, [border, text]) in zip(topKeys, newKeys)
+		# 	]),
+		# 	ciphers[2].tagText.animate().shift(-txtShift)
+		# )
+		# self.play(
+		# 	FadeOut(ciphers[2].tagText),
+		# 	ciphers[1].addTag("cipher text"),
+		# 	run_time = 0.001
+		# )
+
+		# self.wait()
+
+
 
 		# highlight arrows
 
 		self.remove(
 			keys[0].redArrow,
-			keys[1].redArrow
+			keys[2].redArrow
 		)
 		self.play(
 			keys[0].createRedArrow(), 
@@ -1254,8 +1339,8 @@ class TripleDes(Scene):
 		self.wait()
 
 		self.play(
-			Circumscribe(ciphers[1].border),
-			keys[1].createRedArrow()
+			Circumscribe(ciphers[2].border),
+			keys[2].createRedArrow()
 		)
 		self.wait()
 
@@ -1281,12 +1366,14 @@ class TripleDes(Scene):
 		self.play(
 			Unwrite(txt),
 			plain.move_to(posPlain.copy()+midDiagramPos - bottomDiagramPos),
-			ciphers[1].move_to(posFinal+midDiagramPos - bottomDiagramPos),
+			ciphers[2].move_to(posFinal+midDiagramPos - bottomDiagramPos),
 			keys[0].remove(),
-			keys[1].remove(),
+			keys[2].remove(),
 			topKeys[0].removeRec(noBrace=True),
-			topKeys[1].removeRec(),
-			ciphers[0].remove()
+			topKeys[2].removeRec(noBrace=True),
+			ciphers[0].remove(),
+			Uncreate(topKeys[1].brace),
+			Unwrite(topKeys[1].title),
 		)
 		self.wait()
 
@@ -1361,6 +1448,7 @@ class DesMITM(Scene):
 		plain = Btext(
 			strPlainText, 
 			position = posPlain,
+			color = plainColor
 		)
 		self.play(
 			plain.create(tag = True, tagStr="plain text"),
@@ -1371,7 +1459,8 @@ class DesMITM(Scene):
 			constructRandomString(), 
 			position = posFinal,
 			width = plain.width,
-			height = plain.height
+			height = plain.height,
+			color = cipherColor
 		)
 		self.play(
 			cipher.create(tag = True, tagStr="cipher text"),
@@ -1683,7 +1772,6 @@ class DesMITM(Scene):
 		)
 		self.wait()
 
-
 class GeneralMITM(ThreeDScene):
 	def construct(self):
 		"""
@@ -1973,7 +2061,6 @@ class GeneralMITM(ThreeDScene):
 			]
 		)
 		self.wait()
-
 
 def constructTextBorder(insideObject = None, position = np.array([0, 0, 0]), width = None, height = None, color = borderColor, fill_color = None, fill_opacity = 0.0):
 	#rec = RoundedRectangle(corner_radius = 0.1, color = color, height = height, width = width)
