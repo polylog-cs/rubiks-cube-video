@@ -32,7 +32,6 @@ of the solved cube. Remember, every cube has 18
 neighbors in the full graph!
 """
 
-
 class UnzoomCubeGraph(util.RubikScene):
     def construct(self):
         self.next_section(skip_animations=False)

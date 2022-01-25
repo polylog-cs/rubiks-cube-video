@@ -317,7 +317,7 @@ class Key:
 
 		self.text = Tex(keyString, color = textColor).move_to(self.position).scale(scale)
 		self.brace = Brace(self.text, UP, color = textColor).shift(textPadding * UP).scale(scale)
-		self.title = Tex("56 bits", color = textColor).scale(scale)
+		self.title = Tex("56 bit key", color = textColor).scale(scale)
 		self.braceTitle = Group(self.brace, self.title).arrange(UP)
 
 		self.border = Rectangle(
@@ -378,7 +378,7 @@ class Key:
 			color = keyColor
 		).move_to(self.border.get_center())
 		newBrace = Brace(newText, UP, color = textColor).move_to(self.brace.get_center())
-		newTitle = Tex("56 bits", color = textColor).move_to(self.title.get_center())
+		newTitle = Tex("56 bit key", color = textColor).move_to(self.title.get_center())
 		newRedArrow = Arrow(
 			start = newBorder.get_left(),
 			end = newBorder.get_right(),
@@ -450,7 +450,7 @@ class Key:
 
 		self.text = Tex(self.keyString, color = textColor).move_to(self.position + self.upShift)
 		self.brace = Brace(self.text, UP, color = textColor).shift(textPadding * UP)
-		self.title = Tex("56 bits", color = textColor)
+		self.title = Tex("56 bit key", color = textColor)
 		self.braceTitle = Group(self.brace, self.title).arrange(UP)
 
 		newBorder = Rectangle(
@@ -1240,7 +1240,7 @@ class TripleDes(Scene):
 		)
 		self.wait()
 		
-		newTitle = Tex(r"168 bits", color = textColor).move_to(topKeys[1].title.get_center())
+		newTitle = Tex(r"168 bit key", color = textColor).move_to(topKeys[1].title.get_center())
 		newBrace = Brace(Group(topKeys[0].text, topKeys[2].text), UP, color = textColor).move_to(topKeys[1].brace.get_center())
 		self.play(
 			FadeOut(topKeys[0].title),
@@ -1265,7 +1265,7 @@ class TripleDes(Scene):
 		newKeys[2][0].color = RED 
 		newKeys[2][1].color = RED
 
-		newTitle = Tex(r"112 bits", color = textColor).move_to(topKeys[1].title.get_center())
+		newTitle = Tex(r"112 bit key", color = textColor).move_to(topKeys[1].title.get_center())
 		newBrace = Brace(Group(newKeys[0][1], newKeys[1][1]), UP, color = textColor).move_to(topKeys[1].brace)
 		
 

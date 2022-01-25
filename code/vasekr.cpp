@@ -1,4 +1,12 @@
-/* Written by Filip Hlasek 2021 */
+/* 
+Written by Filip Hlasek 2021 
+some changes by Vaclav Rozhon and Vaclav Volhejn
+
+This is a demonstration of the meet in the middle technique
+used to find a fastest solution of a particular Rubik's cube. 
+
+There are much more efficient algorithms for this task. 
+*/
 
 #include <cassert>
 #include <cstdio>
@@ -60,17 +68,8 @@ const int MOVES[6][5][4] = {
 };
 
 
-// inline void apply_move(string& state, int face) { 
-//     for (int p = 0; p < 5; ++p) {
-//         auto tmp = state[MOVES[face][p][0]];
-//         state[MOVES[face][p][0]] = state[MOVES[face][p][1]];
-//         state[MOVES[face][p][1]] = state[MOVES[face][p][2]];
-//         state[MOVES[face][p][2]] = state[MOVES[face][p][3]];
-//         state[MOVES[face][p][3]] = tmp;
-//     }
-// }
 
-inline void apply_move(string& state, int face) {
+inline void apply_move(string& state, const int face) {
     for (int p = 0; p < 5; ++p) {
       for (int i = 3; i >= 1; i--) {
         std::swap(state[MOVES[face][p][i]], state[MOVES[face][p][i - 1]]);
@@ -78,7 +77,7 @@ inline void apply_move(string& state, int face) {
     }
 }
 
-inline pair<ull, ull> compress_state(string& state){
+inline pair<ull, ull> compress_state(const string& state){
     ull fst = 0;
     ull snd = 0;
     for(int i = 0; i < 24; ++i){ // log_2(6^24) = 62.1
@@ -92,10 +91,6 @@ inline pair<ull, ull> compress_state(string& state){
     return {fst, snd};
 }
 
-// inline ull hsh_state(string& state){
-//     pair<ull, ull> p = compress_state(state);
-//     return p.first ^ p.second;
-// }
 
 // Create the starting configuration of Feliks
 string FELIKS;
@@ -118,33 +113,7 @@ void create_feliks_cube(){
   //print_state(FELIKS);
 }
 
-
-
-//#define BITSET_SIZE 17179869184LL
-//#define BITSET_SIZE 34359738368LL
-//#define BITSET_SIZE 1ULL << 30
-const long long BITSET_SIZE = 1ULL << 3; //2;
-
 long long explored = 0;
-long long P = (1ULL << 63) - 25;
-
-ofstream dump_states;
-    
-
-long long hash_state(string &state) {
-  long long hash = 0;
-
-  for (int i = 0; i < 48; ++i) {
-    hash = hash * P + (state[i] - 'A');
-  }
-
-  // Since we always use odd P and there is an even number of odd elements
-  // in the state vector, the resulting hash is always even. We can improve
-  // the utility of the hashing function by dividing the hash by two.
-  hash >>= 1;
-
-  return hash & (BITSET_SIZE - 1);
-}
 
 struct pair_hash {
     size_t operator () (const pair<ull,ull> &p) const {
@@ -152,126 +121,114 @@ struct pair_hash {
     }
 };
 
-bitset<BITSET_SIZE> bloom_filter;
-vector<pair<string, int> > candidates;
-int cnt_candidates = 0;
-int cnt = 0;
-
-unordered_map<pair<ull, ull>, char, pair_hash> states6;
-unordered_map<pair<ull, ull>, char, pair_hash> states7;
-
-void explore_states(
+ull cnt = 0;
+bool explore_states(
     string& state,
-    int depth,
-    int max_depth,
+    char depth,
+    const char max_depth,
     int last_face,
-    
-    bool first
+    const char max_memo_depth, // max depth to which we memoize
+    unordered_map<pair<ull, ull>, char, pair_hash>& explored_states, // memoization
+    const bool first, //first or second run
+    unordered_map<pair<ull, ull>, char, pair_hash>& crosscheck_states // for second run
 ) {
 
     ++cnt;
 
-    // if(depth == 6){ // some pruning at level 6
-    //     pair<ull, ull> comp_state = compress_state(state);
-    //     if(states6.count(comp_state) && states6[comp_state] <= depth){
-    //         return; //we already visited this state
-    //     }
-    //     states6[comp_state] = depth;
-    // } 
+    pair<ull, ull> comp_state = compress_state(state);
 
-    if(depth == 7){ // some pruning at level 7
-        pair<ull, ull> comp_state = compress_state(state);
-        if(states7.count(comp_state) && states7[comp_state] <= depth){
-            return; //we already visited this state
+    //memoization of states until max_memo_depth 
+    if(depth <= max_memo_depth){
+        if(explored_states.count(comp_state) && explored_states[comp_state] <= depth){
+            return false; //we already visited this state
         }
-        states7[comp_state] = depth;
-    } 
+        explored_states[comp_state] = depth;
+    }
 
-    // if(depth == max_depth){
-    //     long long h = hash_state(state);
-
-    //     if(first){
-    //         bloom_filter.set(h); // put the state in the bloom filter
-            
-    //         //dump_states << state << " " << h << endl; // write the state into the full dump file
-    //     }
-    //     else{
-    //         if(bloom_filter.test(h)){
-    //             ++cnt_candidates;
-    //         }
-    //     }
-
-    //     return;
-    // }
-    
-
-
-    for (int face = 0; face < 6; ++face) {
-        //dont move the same face twice, also, fix order of moving independent faces
-        if (face == last_face || (face < last_face && (face + last_face == 5)) ) {
-            continue;
+    // crosschecking found states with the already computed ones 
+    if(!first){
+        if(crosscheck_states.count(comp_state)){
+            cout << "We found a cube in the middle! " << endl;
+            print_state(state);
+            return true;
         }
-        for (int step = 0; step < 3; ++step) {
-            apply_move(state, face);
-            
-            if(depth < max_depth){
+    }
 
-                explore_states(
+    //continue exploration    
+    if(depth != max_depth){
+        for (int face = 0; face < 6; ++face) {
+            //dont move the same face twice, also, fix order of moving independent faces
+            if (face == last_face || (face < last_face && (face + last_face == 5)) ) {
+                continue;
+            }
+            for (int step = 0; step < 3; ++step) {
+                apply_move(state, face);
+
+                bool ret = explore_states(
                     state,
                     depth + 1,
                     max_depth,
                     face,
-                    first
+                    max_memo_depth,
+                    explored_states,
+                    first,
+                    crosscheck_states
                 );
+                if((!first) && ret){
+                    return true;
+                }
             }
-            
+            apply_move(state, face); // turn the cube back to the original position
         }
-        apply_move(state, face); // turn the cube back to the original position
     }
+    return false;
 }
 
 int main(int argc, char* argv[]) {
-    int max_depth; 
-    sscanf(argv[1], "%d", &max_depth);
+    int max_depth1, max_depth2; 
+    sscanf(argv[1], "%d", &max_depth1);
+    sscanf(argv[2], "%d", &max_depth2);
+
     //generate the cube of Feliks
     create_feliks_cube();
-    //print_state(FELIKS);
+        
+    // first run of the search
+    string starting_state = SOLVED;
+    unordered_map<pair<ull, ull>, char, pair_hash> found_states_first;
+    unordered_map<pair<ull, ull>, char, pair_hash> dummy;
 
-//for(int l = 0; l <= 10; ++l)
-{
-    dump_states.open("dump_states2.txt");
-    unordered_map<pair<ull, ull>, char, pair_hash> states;
-    bloom_filter.reset();
     explore_states(
-        SOLVED,
+        starting_state,
         0,
-        max_depth,
+        max_depth1,
         -1,
-        true 
+        max_depth1,
+        found_states_first,
+        true,
+        dummy // there are no crosscheck states 
     );
-    dump_states.close();
-    cout << 6 << " " << states6.size() << endl;
-    cout << 7 << " " << states7.size() << endl;
-    //cout << "bloom filter utility: " << bloom_filter.count() << " / " << bloom_filter.size() << endl;
-    //cout << cnt << endl;
-    return 0;
 
-    states.clear();
-    explore_states(
-        FELIKS,
+    cout << "first search finished" << endl;
+
+    starting_state = FELIKS;
+    unordered_map<pair<ull, ull>, char, pair_hash> found_states_second; // memoization to speed up second search
+ 
+    bool ret = explore_states(
+        starting_state,
         0,
-        5,
+        max_depth2,
         -1,
-        false 
+        7, // we memoize until this depth
+        found_states_second,
+        false,
+        found_states_first
     );
-    cout << "no candidates " << cnt_candidates << endl;
 
-    remove("dump_states2.txt");
-    cout << "no computations " << cnt << endl;
+    if(!ret){
+        cout << "we did not find a hit" << endl;
+    }
 
-}
-    
-    
+    cout << "number of explored configurations: " << cnt << endl;
 
     return 0;
 }
