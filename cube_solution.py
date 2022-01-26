@@ -8,7 +8,7 @@ from manim_rubikscube import *
 from solarized import *
 
 import util
-
+import itertools
 #cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
 
@@ -355,3 +355,323 @@ class CubeMITM(util.RubikScene):
             #     break
 
         self.play(cube_from.animate.shift(ORIGIN), run_time=2)
+
+
+
+
+class Discussion(util.RubikScene):
+    def construct(self):
+        self.next_section(skip_animations=False)
+        font_size = 90
+        our_algorithm = [
+            Tex(r"Meet in the middle: ", color = GRAY, font_size = font_size),
+            MathTex(r"2 \cdot 10\,000\,000\,000", color = GRAY, font_size = font_size),
+        ]
+        previous_algorithm = [
+            Tex(r"Simple solution: ", color = GRAY, font_size = font_size),
+            MathTex(r"100\,000\,000\,000\,000\,000\,000", color = GRAY, font_size = font_size),
+        ]
+        our_algorithm[0].move_to(2*LEFT + 2*UP)
+        our_algorithm[1].move_to(our_algorithm[0].get_center()
+        ).shift(4*RIGHT+DOWN)
+        
+        previous_algorithm[0].align_to(our_algorithm[0], LEFT
+        ).shift(1.5*DOWN)
+        previous_algorithm[1].align_to(our_algorithm[1], RIGHT
+        ).shift(2.5*DOWN)
+
+        self.play(
+            Write(our_algorithm[0])
+        )
+        self.wait()
+
+        self.play(
+            Write(our_algorithm[1])
+        )
+        self.wait()
+
+        self.play(
+            Write(previous_algorithm[0])
+        )
+        self.wait()
+
+        self.play(
+            Write(previous_algorithm[1])
+        )
+        self.wait()
+
+        self.play(
+            Unwrite(our_algorithm[0]),
+            Unwrite(our_algorithm[1]),
+            Unwrite(previous_algorithm[0]),
+            Unwrite(previous_algorithm[1]),
+        )
+        self.wait()
+
+
+
+
+
+
+
+        magic = 0.5
+        font_size = 40
+        smaller_font_size = 40
+        self.next_section("Table", skip_animations=False)
+
+        table_group = Group()
+
+        table_values = [
+            [0, 1],
+            [1, 19],
+            [2, 262],
+            [3, 3502],
+            [4, 46741],
+            [5, 621649],
+        ]
+
+        def with_thousand_separator(x):
+            return f"{x:,d}".replace(",", r"\,")
+
+        table = [[r"\textbf{Steps}", r"\textbf{Explored}"]]
+        table += [[with_thousand_separator(x) for x in row] for row in table_values]
+        table += [["$n$", r"$\sim 10^n$"]]
+        table += [[r"$20$", r"$\sim 10^{20}$"]]
+
+        table = [[Tex(x, color=GRAY, font_size = font_size) for x in row] for row in table]
+
+        dots = Group(*[Tex(r"$\vdots$", color = GRAY, font_size = font_size) for _ in range(2)])
+
+        for row in table:
+            table_group.add(*row)
+
+        horizontal_buff = 0.75
+        table_group.arrange_in_grid(
+            cols=2,
+            col_alignments="rl",
+            row_alignments="d" * len(table),
+            buff=(horizontal_buff, MED_SMALL_BUFF),
+        ).shift(magic*LEFT+RIGHT * 14.2 / 4),
+
+        cube = RubiksCube(cubie_size=0.4).shift(magic*LEFT+RIGHT * 14.2 / 4)
+        # cube.next_to(table_group, direction=UP)
+
+        rubiks_group = Group(cube, table_group)
+        rubiks_group.arrange(direction=DOWN, buff=MED_LARGE_BUFF).shift(magic*LEFT+RIGHT * 14.2 / 4)
+
+        # right column
+        right_col = [
+            MathTex(
+                (r"\sim 10^" if i != 0 else r"= 10^") + str(i),
+                color = GRAY,
+                font_size = font_size
+            ).move_to(
+                table[i+1][1].get_left()
+                + 2.2*RIGHT
+            )
+            for i in range(6)
+        ]
+
+        # self.play(
+        #     *[Write(col) for col in right_col],
+        #     table[-1][1].animate.align_to(right_col[0], LEFT)
+        # )
+        # self.wait()
+        dots[0].move_to(
+            (
+                table[-3][0].get_center()
+                + table[-1][0].get_center()
+            )/2
+        )
+
+        self.play(
+            LaggedStart(
+                Succession(
+                    FadeIn(cube),
+                    Rotate(cube, 2 * PI, UP)
+                ),
+                AnimationGroup(
+                    Write(table[0][0]),
+                    Write(table[0][1])
+                ),
+                *[AnimationGroup(
+                    *[Write(cell) for cell in row],
+                    Write(right)
+                ) for row, right in zip(table[1:7], right_col)],
+                Write(dots[0]),
+                AnimationGroup(
+                    Write(table[-1][0]),
+                    Write(table[-1][1].align_to(right_col[0], LEFT))
+                ),
+                lag_ratio=0.25,
+            ),
+        )
+        self.wait()
+
+        # dark rectangle slides
+        self.next_section("Manhattan comparison", skip_animations=False)
+
+        background_rect = Rectangle(
+            height=8,
+            width=14.2 / 2,
+            fill_opacity=1,
+            fill_color=BASE02,
+            color=BASE02,
+            # shade_in_3d=True,  # for the edges of the graph to be in front
+            z_index=-10,
+        )
+
+        background_rect.next_to(14.2 / 2 * LEFT, direction=LEFT)
+        self.add(background_rect)
+
+        magic = 0.5
+        self.play(
+            background_rect.animate.move_to(
+                # background_rect.get_boundary_point(direction=RIGHT) * RIGHT
+                14.2
+                / 4
+                * LEFT
+            ),
+            run_time=2,
+        )
+
+        self.wait()
+
+
+
+
+
+
+
+
+
+        #grid graph
+
+        grid_size = 10
+        grid_center = grid_size // 2
+        grid_spacing = 0.3 #0.35
+
+        vertices = set((i, j) for i in range(grid_size) for j in range(grid_size))
+        distances = {}
+        edges = []
+        layout = {}
+        left_side = [[] for x in range(grid_size)]
+        right_side = [[] for x in range(grid_size)]
+
+        for i in range(grid_size):
+            for j in range(grid_size):
+                layout[(i, j)] = np.array([i * grid_spacing, j * grid_spacing, 0.0])
+                distances[(i, j)] = abs(i - grid_center) + abs(j - grid_center)
+
+                
+                for cur in [(i + 1, j), (i, j + 1)]:
+                    if cur in vertices:
+                        edges.append(((i, j), cur))
+
+        graph = Graph(
+            vertices,
+            edges,
+            layout=layout,
+            # BASE0 is a bit lighter than BASE00 == GRAY
+            vertex_config={"fill_color": GRAY},
+            edge_config={"stroke_color": GRAY},
+        )
+        graph.move_to(LEFT * 14.2 / 4)#.align_to(rubiks_group, UP)
+        self.play(DrawBorderThenFill(graph, run_time=1))
+        self.wait()
+
+        for i in range(grid_size):
+            for j in range(grid_size):
+                left_distance = i+j
+                right_distance = -i-j+2*(grid_size - 1)
+                if left_distance <= right_distance:
+                    left_side[left_distance].append(
+                        graph.vertices[(i, j)].animate.set_color(RED)
+                    )
+                if left_distance >= right_distance:
+                    right_side[right_distance].append(
+                        graph.vertices[(i, j)].animate.set_color(RED)
+                    )
+
+        for (i1,j1), (i2,j2) in edges:
+            left1 = i1+j1
+            left2 = i2+j2
+            right1 = -i1-j1+2*(grid_size - 1)
+            right2 = -i2-j2+2*(grid_size - 1)
+
+            if left1 > left2:
+                left1, left2 = left2, left1
+                right1, right2 = right2, right1
+
+            if left1 < right1:
+                left_side[left1+1].append(
+                    graph.edges[((i1, j1), (i2,j2))].animate.set_color(RED)
+                )
+            if right1 <= left1:
+                right_side[right1].append(
+                    graph.edges[((i1, j1), (i2,j2))].animate.set_color(RED)
+                )
+
+        # for i in range(grid_size):
+        #     for j in range(grid_size):
+        #         if distances[(i, j)] <= dist:
+        #             anims[distances[(i, j)]].append(
+        #                 graph.vertices[(i, j)].animate.set_color(RED)
+        #             )
+
+        #         for cur in [(i + 1, j), (i, j + 1)]:
+        #             if cur in vertices:
+        #                 edge_distance = min(distances[(i, j)], distances[cur])
+        #                 if edge_distance < dist:
+        #                     # We don't know the direction of the edge.
+        #                     edge = graph.edges[(((i, j), cur))]
+        #                     anims[edge_distance + 1].append(edge.animate.set_color(RED))
+
+        anims = list(itertools.chain(*zip(left_side, right_side)))
+
+        #bigger dots for starts
+        start_dots = [
+            Dot(color = RED).scale(2).move_to(graph.vertices[(0,0)].get_center()),
+            Dot(color = RED).scale(2).move_to(graph.vertices[(grid_size-1,grid_size-1)].get_center()),
+        ]
+        start_dots[0].set_z_index(100)
+        start_dots[1].set_z_index(100)
+
+        self.play(
+            Create(start_dots[0]),
+            Create(start_dots[1])
+        )
+        self.wait()
+
+        # add sounds
+        run_time = 0.25
+        lag_ratio = 1
+        for it in range(len(anims)):
+            offset = run_time * lag_ratio * (it + 0.0)
+            self.add_sound(f"audio/bfs/bfs_{it:03d}", time_offset=offset)
+
+        # play bfs
+        self.play(
+            LaggedStart(
+                *[
+                    AnimationGroup(
+                        *anims_step, 
+                        run_time=run_time
+                    )
+                    for anims_step in anims
+                ],
+                lag_ratio=lag_ratio,
+            )
+        )
+        self.wait()
+
+        self.play(
+            FadeOut(background_rect),
+            *[Unwrite(dot) for dot in start_dots],
+            Unwrite(dots[0]),
+            *[Unwrite(col) for col in right_col],
+            *[Unwrite(t) for t in table_group[0:14]],
+            *[Unwrite(t) for t in table_group[16:]],
+            FadeOut(cube),
+            Uncreate(graph),
+        )

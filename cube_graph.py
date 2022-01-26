@@ -16,6 +16,8 @@ import util
 
 cube.DEFAULT_CUBE_COLORS = [BASE3, RED, GREEN, YELLOW, ORANGE, BLUE]
 
+
+
 # https://colorswall.com/palette/171
 cube.DEFAULT_CUBE_COLORS = [
     "#ffffff",
@@ -50,7 +52,10 @@ class UnzoomCubeGraph(util.RubikScene):
         cubes = {0: solved_cube}
         cubes_on_scene = [solved_cube]
 
-        scale = 5
+        #scale = 5
+        scale = 3
+        stop_scale = 1
+
         g.scale(scale, about_point=ORIGIN)
         solved_cube.scale(scale, about_point=ORIGIN)
 
@@ -58,10 +63,10 @@ class UnzoomCubeGraph(util.RubikScene):
         anim_steps = 12
 
         def scale_updater(mobject, dt):
-            mobject.scale((1 / scale) ** (dt / anim_steps), about_point=ORIGIN)
+            mobject.scale((stop_scale / scale) ** (dt / anim_steps), about_point=ORIGIN)
 
         # Do one second of scaling in advance
-        g.scale((1 / scale) ** (1 / anim_steps))
+        g.scale((stop_scale / scale) ** (1 / anim_steps))
 
         g.add_updater(scale_updater)
         solved_cube.add_updater(scale_updater)
@@ -188,16 +193,6 @@ class HighlightCubeGraph(util.RubikScene):
         self.play(*[cube.animate.scale(infty) for cube in cubes_on_scene])
         self.wait()
 
-class Test(Scene):
-    def construct(self):
-        red_rgb = np.array(mplcolors.hex2color(RED))
-        magenta_rgb = np.array(mplcolors.hex2color(MAGENTA))
-        red_shades = [
-            mplcolors.rgb2hex( ( red_rgb*i + magenta_rgb*(4-i) ) / 5.0)
-            for i in range(5)
-        ]
-        self.add(Dot(color = red_shades[2]))
-
 class BFSCubeGraph(util.RubikScene):
     def construct(self):
         self.next_section(skip_animations=False)
@@ -215,8 +210,9 @@ class BFSCubeGraph(util.RubikScene):
         solved_cube = RubiksCube(cubie_size=0.15).set_stroke_width(0.5).shift(OUT)
         n_nodes, _edges, anims_to_do, g = get_graph()
         g.shift(IN)
-        g.fade(0)
+        #g.fade(0)
         self.add(g)
+        
 
         cubes = {0: solved_cube}
         cubes_on_scene = [solved_cube]
@@ -236,7 +232,7 @@ class BFSCubeGraph(util.RubikScene):
             anims_to_do = leftover
 
         self.add(*cubes_on_scene)
-
+        
         solved_i = 0
         scrambled_i = 10
         radius = 0.6
@@ -473,9 +469,17 @@ def get_graph():
         layout="kamada_kawai",
     )
     g.rotate(angle=-25 * DEGREES)
-    g.scale_to_fit_height(7.5)
+    g.scale_to_fit_height(8) # 7.5
     g.shift(-g.vertices[0].get_center())
-
+    # new_layout = {key: np.array([pos[0], pos[1], pos[2]]) for key, pos in g._layout.items()}
+    # g.change_layout(
+    #     new_layout
+    # )
+    # print(new_layout)
+    # print(g[0])
+    # for i in range(n_nodes):
+    #     g[i].move_to(new_layout[g[i]])
+    
     return n_nodes, edges, anims_to_do, g
 
 
