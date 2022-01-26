@@ -1069,6 +1069,7 @@ class GeneralMITM(ThreeDScene):
 
 		plain = Btext(
 			strPlainText, 
+            color = plainColor,
 			position = midDiagramPos + shft + halfScreen/2 * RIGHT - halfScreen/3 * RIGHT,
 			scale = sc,
 		)
@@ -1085,6 +1086,7 @@ class GeneralMITM(ThreeDScene):
 			constructRandomString(), 
 			position = midDiagramPos + shft + halfScreen/2 * RIGHT + halfScreen/3 * RIGHT,
 			scale = sc,
+            color = cipherColor,
 			width = plain.width,
 			height = plain.height
 		)

@@ -356,6 +356,10 @@ class BFSCubeGraph(util.RubikScene):
         )
         self.wait()
 
+        self.play(
+            *[FadeOut(obj) for obj in self.mobjects]
+        )
+
 
 def get_graph():
     n_nodes = 1

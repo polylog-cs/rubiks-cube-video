@@ -1045,6 +1045,11 @@ class FriendshipGraph(util.RubikScene):
 
         self.wait()
 
+        self.play(
+            *[FadeOut(obj) for obj in self.mobjects]
+        )
+
+        self.wait()
 
 
 def gen_house(color = RED, height = 1, z_index = 100):

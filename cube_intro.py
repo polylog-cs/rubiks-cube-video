@@ -14,40 +14,40 @@ import util
 
 
 
-class Logo(ThreeDScene):
-    def construct(self):
-        text_color = GRAY
-        buffer_h = 2.7
-        buffer_v = 1.3  # pripadne: 1.5
-        row_shift = 0.35  # pripadne: 0
+# class Logo(ThreeDScene):
+#     def construct(self):
+#         text_color = GRAY
+#         buffer_h = 2.7
+#         buffer_v = 1.3  # pripadne: 1.5
+#         row_shift = 0.35  # pripadne: 0
 
-        a = []
-        for i in range(3):
-            row = []
-            for j in range(3):
-                cur = Tex(r"log", color=text_color)
-                cur.scale(4).shift(
-                    (j * buffer_h + i * row_shift) * RIGHT + i * buffer_v * DOWN
-                )
-                row.append(cur)
+#         a = []
+#         for i in range(3):
+#             row = []
+#             for j in range(3):
+#                 cur = Tex(r"log", color=text_color)
+#                 cur.scale(4).shift(
+#                     (j * buffer_h + i * row_shift) * RIGHT + i * buffer_v * DOWN
+#                 )
+#                 row.append(cur)
 
-            a += row
+#             a += row
 
-        group = Group(*a)
-        group.move_to(ORIGIN)
+#         group = Group(*a)
+#         group.move_to(ORIGIN)
 
-        if False:
-            w, h = 14, 8.2
-            w = h
-            bg = Polygon(
-                np.array([-w / 2, h / 2, 0]),
-                np.array([w / 2, h / 2, 0]),
-                np.array([-w / 2, -h / 2, 0]),
-                color=BASE02,
-                fill_opacity=1,
-            )
+#         if False:
+#             w, h = 14, 8.2
+#             w = h
+#             bg = Polygon(
+#                 np.array([-w / 2, h / 2, 0]),
+#                 np.array([w / 2, h / 2, 0]),
+#                 np.array([-w / 2, -h / 2, 0]),
+#                 color=BASE02,
+#                 fill_opacity=1,
+#             )
 
-            self.add(bg, *a)
+#             self.add(bg, *a)
 
 
 class ChannelIntro(ThreeDScene):
@@ -142,6 +142,10 @@ class MoveDefinition(util.RubikScene):
 
         self.wait()
 
+        # move sides
+        for i in range(6):
+            self.play_cube_sound(i * DEFAULT_LAGGED_START_LAG_RATIO*11)
+
         self.play(
             LaggedStart(
                 *[CubeMove(cube, face + "4") for cube, face in zip(cubes, faces)],
@@ -184,15 +188,31 @@ class MoveDefinition(util.RubikScene):
         for j in [2, 0, 1]:
             anim = []
             for i, face in enumerate(faces):
-                self.play_cube_sound((j * 6 + i) * lag_ratio / 2)
-                anim.append(CubeMove(cubes[j * 6 + i], face + ["", "2", "'"][j], run_time=0.5))
+                anim.append(CubeMove(cubes[j * 6 + i], face, run_time=[0.5, 0.25, 0.25][j]))
             anims.append(AnimationGroup(*anim))
         
-        self.play(anims[0], run_time = 1)
-        self.play(anims[1], run_time = 1)
-        self.play(anims[2], run_time = 1.5)
-        #self.play(LaggedStart(*anims, lag_ratio=lag_ratio))
+        self.play_cube_sound(0)        
+        self.play(anims[0], run_time = 0.5)
+        self.wait(0.5)
+
+        self.play_cube_sound(0)        
+        self.play(anims[1], run_time = 0.5)
+        self.play_cube_sound(0)        
+        self.play(anims[1], run_time = 0.5)
+        self.wait(0.5)
+        
+        self.play_cube_sound(0)        
+        self.play(anims[2], run_time = 0.5)
+        self.play_cube_sound(0)        
+        self.play(anims[2], run_time = 0.5)
+        self.play_cube_sound(0)        
+        self.play(anims[2], run_time = 0.5)
+
         self.wait(2)
+
+        self.play(
+            *[FadeOut(obj) for obj in self.mobjects]
+        )
 
 
 class FeliksVsOptimal(util.RubikScene):

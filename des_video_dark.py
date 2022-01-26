@@ -295,15 +295,16 @@ class Btext:
 
 # key object
 class Key:
-	def __init__(self, keyString, position = np.array([0, 0, 0]), scale = 1.0, clipartWidth = keyWidthLarge, upShift = 0.0*UP):
+	def __init__(self, keyString, position = np.array([0, 0, 0]), scale = 1.0, clipartWidth = keyWidthLarge, upShift = 0.0*UP, keyTitle ="56 bit key"):
 		self.keyString = keyString
 		self.clipartWidth = clipartWidth
 		self.position = position
 		self.upShift = upShift
+		self.keyTitle = keyTitle
 
 		self.text = Tex(keyString, color = textColor).move_to(self.position).scale(scale)
 		self.brace = Brace(self.text, UP, color = textColor).shift(textPadding * UP).scale(scale)
-		self.title = Tex("56 bit key", color = textColor).scale(scale)
+		self.title = Tex(self.keyTitle, color = textColor).scale(scale)
 		self.braceTitle = Group(self.brace, self.title).arrange(UP)
 
 		self.border = Rectangle(
@@ -364,7 +365,7 @@ class Key:
 			color = keyColor
 		).move_to(self.border.get_center())
 		newBrace = Brace(newText, UP, color = textColor).move_to(self.brace.get_center())
-		newTitle = Tex("56 bit key", color = textColor).move_to(self.title.get_center())
+		newTitle = Tex(self.keyTitle, color = textColor).move_to(self.title.get_center())
 		newRedArrow = Arrow(
 			start = newBorder.get_left(),
 			end = newBorder.get_right(),
@@ -892,6 +893,7 @@ class TripleDes(Scene):
 			Key(
 				str, 
 				position = pos.copy(), 
+                keyTitle = "56 bits"
 			) for (pos, str) in zip(keyPositions, keyStrings)
 		]
 
@@ -919,7 +921,8 @@ class TripleDes(Scene):
 		topKeys = [
 			Key(
 				str, 
-				position = pos.copy()
+				position = pos.copy(),
+                keyTitle = "56 bits"
 			) for (pos, str) in zip(keyPositions, keyStrings)
 		]
 		self.play(*[key.createRectangleKey(noBrace=True) for key in topKeys], run_time = 0.01)

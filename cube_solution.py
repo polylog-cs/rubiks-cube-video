@@ -328,7 +328,7 @@ class CubeMITM(util.RubikScene):
 
         for anims_from, anims_to in zip(path_anims_from, path_anims_to):
             self.play(*(anims_from + anims_to), run_time=1 / 3)
-            self.add_sound(f"audio/click/click_{random.randint(0, 4)}.wav")
+            self.add_sound(f"audio/click/click_{random.randint(0, 3)}.wav")
 
         self.add_sound("audio/polylog_success.wav", time_offset=0.5)
 
@@ -355,6 +355,12 @@ class CubeMITM(util.RubikScene):
             #     break
 
         self.play(cube_from.animate.shift(ORIGIN), run_time=2)
+
+        self.play(
+            *[FadeOut(obj) for obj in self.mobjects]
+        )
+
+        return
 
 
 
@@ -547,7 +553,7 @@ class Discussion(util.RubikScene):
 
         #grid graph
 
-        grid_size = 10
+        grid_size = 11
         grid_center = grid_size // 2
         grid_spacing = 0.3 #0.35
 
@@ -646,24 +652,15 @@ class Discussion(util.RubikScene):
         # add sounds
         run_time = 0.25
         lag_ratio = 1
-        for it in range(len(anims)):
-            offset = run_time * lag_ratio * (it + 0.0)
-            self.add_sound(f"audio/bfs/bfs_{it:03d}", time_offset=offset)
-
-        # play bfs
-        self.play(
-            LaggedStart(
-                *[
-                    AnimationGroup(
-                        *anims_step, 
-                        run_time=run_time
-                    )
-                    for anims_step in anims
-                ],
-                lag_ratio=lag_ratio,
+        for it in range(2, len(anims)):
+            # offset = run_time * lag_ratio * (it + 0.0)
+            self.add_sound(f"audio/bfs/bfs_{it:03d}", time_offset=0)
+            self.play(
+               *anims[it],
+                run_time = 0.3
             )
-        )
-        self.wait()
+
+        self.wait(2)
 
         self.play(
             FadeOut(background_rect),
