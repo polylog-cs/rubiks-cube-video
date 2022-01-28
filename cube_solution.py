@@ -433,7 +433,7 @@ class Discussion(util.RubikScene):
             [2, 262],
             [3, 3502],
             [4, 46741],
-            [5, 621649],
+            #[5, 621649],
         ]
 
         def with_thousand_separator(x):
@@ -441,7 +441,7 @@ class Discussion(util.RubikScene):
 
         table = [[r"\textbf{Steps}", r"\textbf{Explored}"]]
         table += [[with_thousand_separator(x) for x in row] for row in table_values]
-        table += [["$n$", r"$\sim 10^n$"]]
+        table += [["$10$", r"$\sim 10^{10}$"]]
         table += [[r"$20$", r"$\sim 10^{20}$"]]
 
         table = [[Tex(x, color=GRAY, font_size = font_size) for x in row] for row in table]
@@ -458,6 +458,10 @@ class Discussion(util.RubikScene):
             row_alignments="d" * len(table),
             buff=(horizontal_buff, MED_SMALL_BUFF),
         ).shift(magic*LEFT+RIGHT * 14.2 / 4),
+        for o in [table_group[-1], table_group[-2]]:
+            o.shift(0.6*DOWN) 
+        for o in [table_group[-3], table_group[-4]]:
+            o.shift(0.3*DOWN) 
 
         cube = RubiksCube(cubie_size=0.4).shift(magic*LEFT+RIGHT * 14.2 / 4)
         # cube.next_to(table_group, direction=UP)
@@ -475,7 +479,7 @@ class Discussion(util.RubikScene):
                 table[i+1][1].get_left()
                 + 2.2*RIGHT
             )
-            for i in range(6)
+            for i in range(5)
         ]
 
         # self.play(
@@ -486,6 +490,12 @@ class Discussion(util.RubikScene):
         dots[0].move_to(
             (
                 table[-3][0].get_center()
+                + table[-2][0].get_center()
+            )/2
+        )
+        dots[1].move_to(
+            (
+                table[-2][0].get_center()
                 + table[-1][0].get_center()
             )/2
         )
@@ -506,6 +516,11 @@ class Discussion(util.RubikScene):
                 ) for row, right in zip(table[1:7], right_col)],
                 Write(dots[0]),
                 AnimationGroup(
+                    Write(table[-2][0]),
+                    Write(table[-2][1].align_to(right_col[0], LEFT))
+                ),
+                Write(dots[1]),
+                AnimationGroup(
                     Write(table[-1][0]),
                     Write(table[-1][1].align_to(right_col[0], LEFT))
                 ),
@@ -513,6 +528,18 @@ class Discussion(util.RubikScene):
             ),
         )
         self.wait()
+        # highlights
+
+        self.play(
+            Circumscribe(Group(table[-2][0], table[-2][1]), color=RED)
+        )
+        self.wait()
+        
+        self.play(
+            Circumscribe(Group(table[-1][0], table[-1][1]), color=RED)
+        )
+        self.wait()
+        
 
         # dark rectangle slides
         self.next_section("Manhattan comparison", skip_animations=False)
@@ -663,12 +690,17 @@ class Discussion(util.RubikScene):
         self.wait(2)
 
         self.play(
-            FadeOut(background_rect),
-            *[Unwrite(dot) for dot in start_dots],
-            Unwrite(dots[0]),
-            *[Unwrite(col) for col in right_col],
-            *[Unwrite(t) for t in table_group[0:14]],
-            *[Unwrite(t) for t in table_group[16:]],
-            FadeOut(cube),
-            Uncreate(graph),
+            *[FadeOut(o) for o in self.mobjects]
         )
+
+        # self.play(
+        #     FadeOut(background_rect),
+        #     *[Unwrite(dot) for dot in start_dots],
+        #     Unwrite(dots[0]),
+        #     Unwrite(dots[1]),
+        #     *[Unwrite(col) for col in right_col],
+        #     *[Unwrite(t) for t in table_group[0:14]],
+        #     *[Unwrite(t) for t in table_group[16:]],
+        #     FadeOut(cube),
+        #     Uncreate(graph),
+        # )
