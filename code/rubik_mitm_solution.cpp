@@ -9,7 +9,7 @@ We ran it on a cluster as follows: ./rubik_mitm_solution 8 10
 The program ran for ~4 hours and needed ~90GB of memory. 
 
 There are much more efficient algorithms for this task! 
-
+For example, look here: http://kociemba.org/cube.htm
 */
 
 #include <cassert>
