@@ -8,7 +8,7 @@ from manim_rubikscube import *
 
 # This also replaces the default colors
 from solarized import *
-
+from random import random
 import util
 
 
@@ -503,3 +503,63 @@ class NumberOfStates(Scene):
             Unwrite(tens[1])
         )
         self.wait()
+
+
+
+class Beginning(util.RubikScene):
+    def construct(self):
+
+        cube = RubiksCube(cubie_size=0.75, rotate_nicely=False)
+
+        buff = 2
+        counter = (
+            Integer(0, color=GRAY)
+            .scale(1.5)
+            .next_to(cube, direction=RIGHT, buff=buff)
+        )
+
+        time = (
+            DecimalNumber(0.0, color=GRAY)
+            .scale(1.5)
+            .next_to(cube, direction=LEFT, buff=buff)
+        )
+        time.add_updater(
+            lambda d, dt : d.set_value(d.get_value() + dt)
+        )
+        
+
+        counter_text = Tex("Moves", color = GRAY).move_to(counter.get_center()).shift(UP)
+        time_text = Tex("Time", color = GRAY).move_to(time.get_center()).shift(UP)
+
+        self.add(counter, time, counter_text, time_text)        
+
+        util.scramble_to_feliks(cube)
+
+        # Rotate to get Feliks' POV
+        cube.rotate(PI / 2, RIGHT)
+        cube.rotate(PI / 2, UP)
+
+        # "rotate nicely"
+        cube.rotate(-20 * DEGREES, axis=np.array([0, 1, 0]))
+        cube.rotate(20 * DEGREES, axis=np.array([1, 0, 0]))
+
+        self.add(cube)
+        self.wait()
+
+        for i, move in enumerate(util.FELIKS_UNSCRAMBLE_MOVES):
+            anims_cur = [cube.animate.do_move(move)]
+            if i == 10:
+                counter.shift(0.1*LEFT)
+            counter.set_value(i + 1).set_color(GRAY),
+            self.play_cube_sound()
+            self.play(
+                *anims_cur, 
+                run_time=0.42
+            )
+
+            
+
+
+
+        self.wait(10)
+

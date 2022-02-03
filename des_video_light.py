@@ -951,7 +951,7 @@ class GeneralMITM(ThreeDScene):
 		self.camera.should_apply_shading = False
 
 		# first split screen
-		self.next_section(skip_animations=False)
+		self.next_section(skip_animations=True)
 
 		backgroundRect = Rectangle(
 			height = 8,
@@ -1180,7 +1180,7 @@ class GeneralMITM(ThreeDScene):
 			FadeOut(cube)
 		)
 		self.wait()
-
+		self.next_section(skip_animations=False)
 
 		# final thanks
 		channel_name = Tex(r"polylog", color=textColor)
@@ -1189,14 +1189,21 @@ class GeneralMITM(ThreeDScene):
 		thanks = [
 			Tex(str, color = textColor)
 			for str in [
-				r"Big thanks to: 3blue1brown \& Manim community for Manim",
-				"KingWampy for Rubik's cube library in Manim",
-				"people"
+				r"Big thanks to: ",
+				r"3blue1brown \& Manim Community for Manim",
+				"KingWampy for the manim-rubikscube library",
+				"Filip Bialas, Tom Gavenčiak, Kristýna Hrabánková, ",
+				"Aranka Hrušková, Matěj Konečný, Hana Rozhoňová, ",
+				"Alžběta Volhejnová, Jan Volhejn"
 			]
 		]
 		thanks_group = Group(*thanks).arrange(DOWN).shift(14.2 * LEFT)
+		thanks[0].shift(5.5*LEFT + 1*DOWN)
 		for t in thanks:
 			t.align_to(thanks[0], LEFT)
+		for t in thanks[1:6]:
+			t.shift(1*RIGHT + 1.3*DOWN)
+		
 		self.add(
 			*thanks,
 			channel_name
