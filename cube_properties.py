@@ -154,9 +154,6 @@ class Neighborhood(util.RubikScene):
             self.bring_to_front(cube)
             anims.append(cube.animate.shift(ORIGIN))
 
-        
-
-        anims = []
         for u0, v0 in edges:
             # Edges to vertices at distance 3 - ignore these
             if u0 in layers[3] or v0 in layers[3]:
