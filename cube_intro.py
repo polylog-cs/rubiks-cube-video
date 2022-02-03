@@ -546,7 +546,7 @@ class Beginning(util.RubikScene):
         self.add(cube)
         self.wait()
 
-        for i, move in enumerate(util.FELIKS_UNSCRAMBLE_MOVES):
+        for i, move in enumerate(util.FELIKS_ACTUAL_SOLUTION_MOVES):
             anims_cur = [cube.animate.do_move(move)]
             if i == 10:
                 counter.shift(0.1*LEFT)
