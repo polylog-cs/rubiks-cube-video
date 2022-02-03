@@ -107,16 +107,14 @@ class Neighborhood(util.RubikScene):
                     Create(Line(layout[u], layout[v], shade_in_3d=True, color=GRAY))
                 )
 
-        for cube in cubes1 + [q[0]]:
-            # Dummy animations to keep the cubes on top
-            anims.append(cube.animate.shift(ORIGIN))
+        # for cube in cubes1 + [q[0]]:
+        #     # Dummy animations to keep the cubes on top
+        #     anims.append(cube.animate.shift(ORIGIN))
 
-        self.play(*anims)
-        self.wait()
+        # self.play(*anims)
+        # self.wait()
 
         self.next_section("Second layer", skip_animations=False)
-
-        anims = []
 
         for i, cube in enumerate(q[19:]):
             h = cube.hash()
@@ -157,40 +155,6 @@ class Neighborhood(util.RubikScene):
             anims.append(cube.animate.shift(ORIGIN))
 
         self.play(LaggedStart(*anims, lag_ratio=0.01))
-        self.wait()
-
-        anims = []
-        for u0, v0 in edges:
-            # Edges to vertices at distance 3 - ignore these
-            if u0 in layers[3] or v0 in layers[3]:
-                continue
-
-            # Try both orderings
-            for u, v in [(u0, v0), (v0, u0)]:
-                if u in layers[2] or v in layers[2]:
-                    if u in layers[2]:
-                        u, v = v, u
-
-                    # Skip the edge to the parent because we've already created it
-                    if u != parents[v]:
-                        anims.append(
-                            Create(
-                                Line(
-                                    layout[u],
-                                    layout[v],
-                                    shade_in_3d=True,
-                                    color=GRAY,
-                                    stroke_width=2,
-                                )
-                            )
-                        )
-
-        for cube in cubes1 + [q[0]]:
-            # Dummy animations to keep the cubes on top
-            self.bring_to_front(cube)
-            anims.append(cube.animate.shift(ORIGIN))
-
-        self.play(*anims)
         self.wait()
 
 
