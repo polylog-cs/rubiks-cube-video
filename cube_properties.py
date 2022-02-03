@@ -137,7 +137,8 @@ class Neighborhood(util.RubikScene):
                                     shade_in_3d=True,
                                     color=GRAY,
                                     stroke_width=2,
-                                )
+                                ),
+                                run_time=3,
                             )
                         )
 
