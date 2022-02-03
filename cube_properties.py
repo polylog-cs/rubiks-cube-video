@@ -194,59 +194,6 @@ class Neighborhood(util.RubikScene):
         self.wait()
 
 
-class BFSTest(util.RubikScene):
-    def construct(self):
-        """
-        Ukázka BFS z jednoho vrcholu, pro testování
-        """
-
-        edges = set()
-        q = [RubiksCube()]
-        seen = set([q[0].hash()])
-        layers = [[q[0].hash()], []]
-
-        print("Starting BFS")
-        for i in trange(262):
-            old_hash = q[i].hash()
-
-            for move in util.POSSIBLE_MOVES:
-                q[i].update_indices_after_move(move)
-                new_hash = q[i].hash()
-                edges.add((min(old_hash, new_hash), max(old_hash, new_hash)))
-
-                if new_hash not in seen:
-                    q.append(q[i].copy())
-                    seen.add(new_hash)
-                    layers[-1].append(new_hash)
-
-                q[i].update_indices_after_move(util.invert_move(move))
-
-            if old_hash == layers[-2][-1]:
-                layers.append([])
-
-        layout = {layers[0][0]: ORIGIN}
-
-        for li, layer in enumerate(layers[1:]):
-            for i, h in enumerate(layer):
-                distance = (li + 1) ** 2
-                pos = distance * UP * np.sin(2 * PI * i / len(layer))
-                pos += distance * RIGHT * np.cos(2 * PI * i / len(layer))
-                layout[h] = pos
-
-        print(f"Done with BFS, {len(seen)} vertices")
-        print([len(x) for x in layers])
-        graph = Graph(
-            list(seen),
-            list(edges),
-            # layout="kamada_kawai",
-            layout=layout,
-            vertex_config={"fill_color": GRAY, "radius": 0.04},
-            edge_config={"stroke_color": GRAY},
-        )
-        self.add(graph)
-        self.wait()
-
-
 class NeighborCount(util.RubikScene):
     def construct(self):
         """

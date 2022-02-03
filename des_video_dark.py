@@ -73,6 +73,22 @@ def flatten(t):
 # constructing random strings inside keys and ciphertexts
 rng_state_1 = random.getstate()
 
+def get_cached_lines():
+	lineLen = 30
+	strList = []
+	for j in range(50):
+		letters = string.ascii_letters + string.digits
+		str = r""
+		for k in range(lineLen):
+			str += random.choice(letters)
+		strList.append(str)
+	
+	return strList
+
+cached_lines = get_cached_lines()
+
+
+
 def constructRandomString(lineLen = 30, numLines = 12):
 	global rng_state_1
 	old_state = random.getstate()
@@ -81,10 +97,11 @@ def constructRandomString(lineLen = 30, numLines = 12):
 	letters = string.ascii_letters + string.digits
 	strList = []
 	for j in range(numLines):
-		str = r""
-		for k in range(lineLen):
-			str += random.choice(letters)
-		strList.append(str)
+		# str = r""
+		# for k in range(lineLen):
+		# 	str += random.choice(letters)
+		# strList.append(str)
+		strList.append(random.choice(cached_lines))
 	strList[-1] = strList[-1][:-3] + "..."
 	strList[0] = strList[0][0: int(lineLen * tinyFontSize / smallFontSize - 1)]
 
