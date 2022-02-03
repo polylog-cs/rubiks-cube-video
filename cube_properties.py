@@ -116,6 +116,32 @@ class Neighborhood(util.RubikScene):
 
         self.next_section("Second layer", skip_animations=False)
 
+        for u0, v0 in edges:
+            # Edges to vertices at distance 3 - ignore these
+            if u0 in layers[3] or v0 in layers[3]:
+                continue
+
+            # Try both orderings
+            for u, v in [(u0, v0), (v0, u0)]:
+                if (u in layers[2]) != (v in layers[2]):
+                    if u in layers[2]:
+                        u, v = v, u
+
+                    # Skip the edge to the parent because we've already created it
+                    if u != parents[v]:
+                        anims.append(
+                            Create(
+                                Line(
+                                    layout[u],
+                                    layout[v],
+                                    shade_in_3d=True,
+                                    color=GRAY,
+                                    stroke_width=2,
+                                )
+                            )
+                        )
+
+
         for i, cube in enumerate(q[19:]):
             h = cube.hash()
             # anims.append(
@@ -153,31 +179,6 @@ class Neighborhood(util.RubikScene):
             # Dummy animations to keep the cubes on top
             self.bring_to_front(cube)
             anims.append(cube.animate.shift(ORIGIN))
-
-        for u0, v0 in edges:
-            # Edges to vertices at distance 3 - ignore these
-            if u0 in layers[3] or v0 in layers[3]:
-                continue
-
-            # Try both orderings
-            for u, v in [(u0, v0), (v0, u0)]:
-                if (u in layers[2]) != (v in layers[2]):
-                    if u in layers[2]:
-                        u, v = v, u
-
-                    # Skip the edge to the parent because we've already created it
-                    if u != parents[v]:
-                        anims.append(
-                            Create(
-                                Line(
-                                    layout[u],
-                                    layout[v],
-                                    shade_in_3d=True,
-                                    color=GRAY,
-                                    stroke_width=2,
-                                )
-                            )
-                        )
 
         for cube in cubes1 + [q[0]]:
             # Dummy animations to keep the cubes on top
