@@ -563,3 +563,53 @@ class Beginning(util.RubikScene):
 
         self.wait(10)
 
+
+
+
+class Thumbnail(util.RubikScene):
+    def construct(self):
+
+        cube = RubiksCube(cubie_size=0.75, rotate_nicely=False)
+        cube2 = RubiksCube(cubie_size=0.75, rotate_nicely=False)
+        buff = 2
+
+        util.scramble_to_feliks(cube)
+
+        # Rotate to get Feliks' POV
+        cube.rotate(PI / 2, RIGHT)
+        cube.rotate(PI / 2, UP)
+
+        cube2.rotate(PI / 2, LEFT)
+        cube2.rotate(PI / 2, UP)
+
+        # "rotate nicely"
+        cube.rotate(-20 * DEGREES, axis=np.array([0, 1, 0]))
+        cube.rotate(20 * DEGREES, axis=np.array([1, 0, 0]))
+        cube2.rotate(20 * DEGREES, axis=np.array([0, 1, 0]))
+        cube2.rotate(20 * DEGREES, axis=np.array([1, 0, 0]))        
+
+        L = 2 * RIGHT
+        cube.shift(-L)
+        cube2.shift(L)
+
+        self.add(cube)
+        self.add(cube2)
+        self.wait()
+        return
+
+        for i, move in enumerate(util.FELIKS_UNSCRAMBLE_MOVES):
+            anims_cur = [cube.animate.do_move(move)]
+            if i == 10:
+                counter.shift(0.1*LEFT)
+            counter.set_value(i + 1).set_color(GRAY),
+            self.play_cube_sound()
+            self.play(
+                *anims_cur, 
+                run_time=0.42
+            )
+
+            
+
+
+
+        self.wait(10)
