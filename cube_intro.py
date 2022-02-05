@@ -556,6 +556,7 @@ class Beginning(util.RubikScene):
                 *anims_cur, 
                 run_time=0.42
             )
+            self.wait(0.4)
 
             
 
