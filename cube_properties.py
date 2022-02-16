@@ -79,6 +79,8 @@ class Neighborhood(util.RubikScene):
         print(f"Done with BFS, {len(seen)} vertices")
 
         self.add(q[0])
+        self.wait()
+        return
 
         anims = []
         cubes1 = []

@@ -14,40 +14,41 @@ import util
 
 
 
-# class Logo(ThreeDScene):
-#     def construct(self):
-#         text_color = GRAY
-#         buffer_h = 2.7
-#         buffer_v = 1.3  # pripadne: 1.5
-#         row_shift = 0.35  # pripadne: 0
+class Logo(ThreeDScene):
+    def construct(self):
+        text_color = GRAY
+        buffer_h = 2.7
+        buffer_v = 1.3  # pripadne: 1.5
+        row_shift = 0.35  # pripadne: 0
 
-#         a = []
-#         for i in range(3):
-#             row = []
-#             for j in range(3):
-#                 cur = Tex(r"log", color=text_color)
-#                 cur.scale(4).shift(
-#                     (j * buffer_h + i * row_shift) * RIGHT + i * buffer_v * DOWN
-#                 )
-#                 row.append(cur)
+        a = []
+        for i in range(3):
+            row = []
+            for j in range(3):
+                cur = Tex(r"log", color=text_color)
+                cur.scale(4).shift(
+                    (j * buffer_h + i * row_shift) * RIGHT + i * buffer_v * DOWN
+                )
+                row.append(cur)
 
-#             a += row
+            a += row
 
-#         group = Group(*a)
-#         group.move_to(ORIGIN)
+        group = Group(*a)
+        group.move_to(ORIGIN)
+        self.add(group)
 
-#         if False:
-#             w, h = 14, 8.2
-#             w = h
-#             bg = Polygon(
-#                 np.array([-w / 2, h / 2, 0]),
-#                 np.array([w / 2, h / 2, 0]),
-#                 np.array([-w / 2, -h / 2, 0]),
-#                 color=BASE02,
-#                 fill_opacity=1,
-#             )
+        if False:
+            w, h = 14, 8.2
+            w = h
+            bg = Polygon(
+                np.array([-w / 2, h / 2, 0]),
+                np.array([w / 2, h / 2, 0]),
+                np.array([-w / 2, -h / 2, 0]),
+                color=BASE02,
+                fill_opacity=1,
+            )
 
-#             self.add(bg, *a)
+            self.add(bg, *a)
 
 
 class ChannelIntro(ThreeDScene):
@@ -123,7 +124,9 @@ class MoveDefinition(util.RubikScene):
         self.play(FadeIn(first_cube))
         self.play(Rotate(first_cube, 2 * PI, UP), run_time=3)
 
-        self.play(first_cube.animate.scale(0.5))
+        self.play(first_cube.animate.scale(0.5), run_time=16)
+        self.wait()
+        return
 
         grid_spacing = 2
 
