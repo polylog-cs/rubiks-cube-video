@@ -82,12 +82,12 @@ inline pair < ull, ull > compress_state(const string & state) {
   ull fst = 0;
   ull snd = 0;
   for (int i = 0; i < 24; ++i) { // log_2(6^24) = 62.1
-    fst += state[i] - 'A';
     fst *= 6;
+    fst += state[i] - 'A';
   }
   for (int i = 0; i < 24; ++i) {
-    snd += state[24 + i] - 'A';
     snd *= 6;
+    snd += state[24 + i] - 'A';
   }
   return {
     fst,
